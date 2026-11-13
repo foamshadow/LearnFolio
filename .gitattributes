@@ -1,0 +1,30 @@
+# 换行：文本文件全仓强制 LF（编辑器层由 .editorconfig 管，git 层由此文件管）
+* text=auto eol=lf
+
+# 二进制（不做换行归一化；text=auto 的自动检测对部分字体/图片格式会误判，显式声明零成本）
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.woff binary
+*.woff2 binary
+*.mp4 binary
+*.webm binary
+*.pdf binary
+*.wasm binary
+
+# SVG 是文本：显式归入 LF 归一化，别落进 binary
+*.svg text eol=lf
+
+# 生成物：GitHub 折叠 diff、不计入语言统计（互审噪音大减）
+apps/web/shared/api/schema.ts linguist-generated
+apps/api/docs/openapi.yaml linguist-generated
+apps/api/ent/** linguist-generated
+apps/api/ent/schema/** -linguist-generated
+go.sum linguist-generated

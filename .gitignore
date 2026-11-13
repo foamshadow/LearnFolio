@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+
+# Nuxt
+.nuxt/
+.output/
+.data/
+dist/
+
+# Go
+bin/
+*.exe
+*.test
+*.out
+coverage.*
+go.work
+go.work.sum
+
+# ent 生成代码【入库】（决策见 ADR-0001）：apps/api/ent/ 不忽略，仅 ent/schema/ 手写
+
+# env & secrets（模板 .env.example 保留在库）
+.env
+.env.*
+!.env.example
+
+# logs / OS
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE：个人配置忽略，团队基线 allowlist（settings.json / extensions.json 由 t5 入库）
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
