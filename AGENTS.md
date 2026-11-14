@@ -44,7 +44,7 @@
 
 ## 分支与版本
 
-分支六类。命名约束（D/F 冲突防护：git ref 存储为文件路径，分支 `feat` 与目录 `feat/` 不能共存）：**main 与 dev 是仅有的两条长存分支**；任何新建分支不得取 main / dev / feat / fix / hotfix / backport 的**单段名**，也**不得以 `main/` 或 `dev/` 为前缀**（与长存分支 D/F 冲突）；`feat/` `fix/` `hotfix/` `backport/` 前缀合法（前缀本身不是分支，是目录）：
+分支七类。命名约束（D/F 冲突防护：git ref 存储为文件路径，分支 `feat` 与目录 `feat/` 不能共存）：**main 与 dev 是仅有的两条长存分支**；任何新建分支不得取 main / dev / feat / fix / hotfix / backport / docs 的**单段名**，也**不得以 `main/` 或 `dev/` 为前缀**（与长存分支 D/F 冲突）；`feat/` `fix/` `hotfix/` `backport/` `docs/` 前缀合法（前缀本身不是分支，是目录）：
 
 - main：产品库。只接受 --no-ff 合入；只接受收口 PR 与 hotfix PR
 - dev：受控库，单条集成分支（Phase 串行无需多线）
@@ -55,20 +55,25 @@
 - backport/<短名>：hotfix 回流 dev 的载体（dev 必 PR 且禁 bypass，"在 dev 上直接
   git merge"不可执行）——从 dev 切出，`git merge <hotfix tag>`（tag 永久自解释，
   优于已删分支的裸 SHA），PR 回 dev
+- docs/<短名>：纯文档改动（`docs/**` 与根文档），从 dev 切出，PR 回 dev，**squash 合入**——
+  恰好一个提交，落地为一条普通提交（无 merge 节点，见 ADR-0005）
 
-分支名固定两段 `前缀/短名`，名称内不得再含 `/`；短名段为 ASCII kebab-case：`^[a-z0-9]+(-[a-z0-9]+)*$`（如 `feat/spec-0001-t2-api-healthz` 的短名段 = `spec-0001-t2-api-healthz`）；前缀取上述六类之一
+分支名固定两段 `前缀/短名`，名称内不得再含 `/`；短名段为 ASCII kebab-case：`^[a-z0-9]+(-[a-z0-9]+)*$`（如 `feat/spec-0001-t2-api-healthz` 的短名段 = `spec-0001-t2-api-healthz`）；前缀取上述七类之一
 
 合并与同步（完整机理与决策链见 ADR-0003）：
 
-- 一律 --no-ff：由 repo settings 只保留 "Allow merge commits" 物理强制；
-  **不得开启** Require linear history（与 --no-ff 互斥）
+- 合入策略分两类（ADR-0005）：**代码任务一律 --no-ff**（settings 保留 merge commit 并物理强制）；
+  **纯文档 PR 走 squash**——`docs/*` 分支、恰好一个提交，落地为一条普通提交、无 merge 节点；
+  **不得开启** Require linear history（与 --no-ff 互斥），rebase merge 保持关闭
 - merge message = PR 标题 + 平台附加的 ` (#N)`（settings 设 Default to PR title、正文留空；2026-11-14 实测），五种格式：
   `合并 spec-N-tM 短名：一句话`（feat→dev）/ `合并 fix 短名：一句话`（fix→dev）/
   `合并 hotfix 短名：一句话（发布 vX.Y.Z）`（hotfix→main——缺此变体则首个 hotfix PR
   会被自己的 CI 拦死）/ `合并 hotfix 短名：backport 自 vX.Y.Z`（backport→dev）/
   `合并 Phase N 收口：vX.Y.Z`（dev→main）；PR 标题由 CI 正则校验
-  （五条完整 alternation + 分支方向矩阵，正则见 SPEC-0001-A5）；
+  （六条完整 alternation + 分支方向矩阵，正则见 SPEC-0001-A5）；
   **合并界面不得手改 message 字段**（Default to PR title 已预填，手改 = 账本行失守）
+- 文档 PR 无 merge 提交：PR 标题即落地提交主题 `docs: …`，账本行 = 该提交；squash 的标题 / 正文
+  取自 PR 标题与描述，描述末尾同列 `Assisted-by` trailer（见 ADR-0005）
 - feat 同步 dev：仅在冲突或 ci-ok 红疑基线时 `git rebase dev`；同步即作废 approved 需重审；
   分支保护不开 "Require up to date"（与整理门过约束死锁，补偿 = push 触发 CI，见 ADR-0003）
 - hotfix 合回 main 并 tag 后，经 **backport/ 分支回流 dev（禁 cherry-pick，机理见
@@ -101,7 +106,7 @@
 
 - main 第一父链 + tag = 版本史（Phase 级；hotfix patch tag 打在 hotfix tip = merge
   第二父，不装饰此链——查 patch 版本用 `git tag -l` / `git tag --contains`）
-- dev 第一父链 = 任务史 + backport 事件（按 merge message 前缀区分）
+- dev 第一父链 = 任务史 + backport 事件 + 文档单提交（merge 节点按 message 前缀区分；文档提交以 `docs:` 前缀识别）
 - feat 全量提交 = 过程史（逻辑步骤级）；合并后自动删除分支不丢过程史
 
 破坏性操作（Phase 0 由人类执行或确认；agent 确认链孵化中，见
@@ -119,6 +124,8 @@ proposals/agent-confirmation-chain，毕业后取代本条）：
   （wip:/fix: 前缀即可）——过程保留是 --no-ff 的目的，WIP 不丢人
 - PR 开启前：rebase -i 整理为逻辑级提交序列——fixup 掉纯噪音（typo 类），保留逻辑步骤；
   整理不是 squash，禁止把整个任务压成一个提交
+- 纯文档 PR 例外：`docs/*` 分支必须**恰好一个提交**、由 GitHub squash 合入（ADR-0005）；
+  多提交先在本地整理——"禁止整体 squash"只约束代码任务
 - 整理时机只允许 PR 前或评审期间增量；**approved 后不再改写**，要改退回重审
   （settings 开 Dismiss stale pull request approvals：新 push 自动作废 approval——
   纪律机制化；副作用 = 评审期间追加 commit 也作废 approval 需重审，与规则一致）
@@ -197,5 +204,10 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
 ## 规范变更
 
 - 本文件的改动走 PR + review；事故驱动变更在 journal 记事故并关联 PR
+- **沉淀三问**（试错 → 文档的落位判据）：① 事故还是演进？事故 → journal 记事故 + 关联 PR；演进 → ADR。
+  ② 决策还是细节？决策 → ADR（含被否方案）；细节 → 本条或 guides。③ 第一个消费者是谁？
+  无 → `proposals/` 孵化；有 → 随其 PR 一起到达
+- **流程冻结线**：Phase 0 收口（v0.1.0）前允许规则快速迭代；此后规则进入基线，只走 ADR 取代链 + PR，
+  **不重写已发布历史**
 - 重决策推翻走 ADR 取代链（新 ADR 声明取代，不改旧文件）
 - 本文件不自带版本号，版本语义由 tag 基线承担
