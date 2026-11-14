@@ -126,3 +126,4 @@ LearnFolio 是学习驱动 + 文档驱动 + agent 全栈开发的实践项目（
 - 2026-11-14 二次转向（同日）：**环境变量注入被否**（多 harness × 多 model 下 shell 全局变量必错配、配置负担随模型数线性涨）——t3 钩子只 fail-closed 校验、不代填，trailer 由 agent 按署名提案 §5 信源清单（harness 配置 → 系统提示 → 问人）查证后自行写入，上条"LF_HARNESS / LF_MODEL 自动补"随之作废；model 键粒度目标 = 详细版本（快照 id 照抄）
 - 2026-11-14 规则落地（首个合并 PR 后）：A5 实测①结案——`Default to PR title` 的 merge commit subject = PR 标题 + ` (#N)`、正文为空，实测清单四项减为三项；agent 署名规则毕业——AGENTS 提交纪律节增 opt-out 细则与 harness / model 键表、立 ADR-0004、proposals/agent-attribution 状态改 adopted 且正文改指针
 - 2026-11-14 双合并策略（ADR-0005）：纯文档改动改 `docs/*` 分支 + squash（无 merge 节点），标题正则扩为六变体、方向矩阵增 dev←docs/*；署名 job 明确只看**非 merge** 提交；ADR-0003 相应转 deprecated（部分条款失效）
+- 2026-11-14 t4 提前执行：继承条款与裁剪判据落 AGENTS（ADR-0008：直接 6 条 + 改写 2 条 + 不取 5 条）；提交 / 推送授权模型落 AGENTS（ADR-0007：双授权、告知义务、WIP 免审与可编译边界）；A9 的裁剪要求提前满足，继承决策 journal 并入 2026-11-14 事件篇

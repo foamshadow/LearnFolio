@@ -29,8 +29,8 @@ main ─────────────────────────
 
 ## 一个任务的一生（以 t2 为例）
 
-1. **开工**：从 dev 切 `feat/spec-0001-t2-api-healthz`（spec 号 + 任务号 + 短名，从名字反查施工图，不依赖任何外部系统）
-2. **开发（agent 自主）**：高频小步提交——每完成一个可验证步骤（编译过 / 测试绿）一 commit，message 可草（`wip:` / `fix:` 前缀）；每任务至少 push 一次。过程提交保留是有意的：bisect 可定位到任务内具体一步，agent 试错轨迹是本项目的学习素材
+1. **开工**：从 dev 切 `feat/spec-0001-t2-api-healthz`（spec 号 + 任务号 + 短名，从名字反查施工图，不依赖任何外部系统）；说明任务内容，申请 **auto-commit / auto-push** 两项独立授权（ADR-0007，任务级生效、可撤销）
+2. **开发（agent 自主）**：高频小步提交——`wip:` 前缀，**提交前告知**（获 auto-commit 时不必等确认，未获时逐条审批、WIP 免审）；锚点（一个可验证步骤）应编译过 / 测试绿；push 需许可（auto-push 任务内免逐次，每次报告）。过程提交保留是有意的：bisect 可定位到任务内具体一步，agent 试错轨迹是本项目的学习素材
 3. **整理（人类执行）**：PR 开启前 `rebase -i`——fixup 掉 typo 链、保留逻辑步骤；禁止把任务整体 squash 成单提交（那会废掉过程保留；**纯文档 PR 例外**——恰好一个提交，由 GitHub squash 合入）；整理前打 backup 分支；push 用 `--force-with-lease --force-if-includes`（本操作 Phase 0 由人类执行；agent 确认链提案孵化中，见 proposals/）
 4. **PR**：标题 = 账本行，五种格式之一（如 `合并 spec-0001-t2 api-healthz：Go 后端最小服务`；五类 merge 变体与 docs 变体、方向矩阵见 AGENTS 分支与版本节）；CI 在 PR 开启时正则校验标题；ci-ok 是必需检查（自 t0 合入起）。合并时 GitHub 会在标题后追加 ` (#N)`——账本行实际形态是 `标题 (#N)`、正文为空（2026-11-14 实测）。**纯文档 PR 例外**：走 `docs/*` 分支，标题直接用 `docs: …`，squash 后账本行为 `docs: … (#N)`（平台同样追加 PR 号，2026-11-14 实测；author 保留其人、committer 变为 GitHub，签名由 GitHub 代签）
 5. **合入 dev**：代码任务用 merge 按钮（settings 只开 merge commit 与 squash，rebase 关闭）→ `--no-ff` 产生 merge 节点；纯文档 PR 用 squash 按钮 → 一条普通提交、无节点（ADR-0005）。为什么代码要节点：git 能快进时会抹平分支不留痕——有的任务成节点、有的消失，账本形状不一致；节点统一后 `git log --first-parent dev` 一任务一行。合并后分支自动删，过程史不丢（merge 节点让提交从 dev 永久可达）
