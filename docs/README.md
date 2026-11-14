@@ -84,6 +84,20 @@ docs/learning/ 一级目录名与 journal 文件名中的作者标识；在 AGEN
 - AGENTS / ADR 的 PR 触及 guides 已覆盖的主题时，须同 PR 更新 guides
   （维护触发器——否则 guides 静默过期）
 
+## 决策线（ADR 阅读顺序）
+
+ADR 按决策时间排列，单看是碎片，按阶段读是一条线。建仓前的策划过程未随仓库保存（见各 ADR 的补记说明与 SPEC-0001 的 `source` 字段），决策已回填为 0001 / 0002 / 0003。
+
+| 阶段 | ADR | 状态 | 回答什么 |
+| --- | --- | --- | --- |
+| 选型（建仓前） | ADR-0001 技术栈、ADR-0002 许可证 | accepted | 用什么、怎么授权 |
+| 流程设计（建仓） | ADR-0003 分支与合并 | deprecated（部分条款） | 怎么协作、账本怎么读 |
+| 运行修正（建仓次日） | ADR-0004 agent 署名、ADR-0005 双合并策略 | accepted | 来源怎么记、文档怎么落 |
+| 元决策 | ADR-0006 文档体系与规则生长 | accepted | 为什么是六类、规则怎么长 |
+| 交付（Phase 0） | 待 t0：CI 门禁（编号待分配） | — | 门禁为什么这样搭 |
+
+读法：先看阶段，再看单篇。`deprecated` 表示部分条款已被取代，沿 `supersedes` 找继任者（ADR-0005 只取代 ADR-0003 的合并方式条款）。**新增 ADR 时在本表追加一行**——这张表就是决策线的入口。
+
 ## frontmatter
 
 status / title / author / tags / source / related / date / supersedes / superseded-by / adopted-as（仅 proposals，按文档类型取用，见各 _template.md）。下游：agent 按 status=ready 检索可开工的 spec；未来站点索引按 frontmatter 构建时间线与知识图谱页。
