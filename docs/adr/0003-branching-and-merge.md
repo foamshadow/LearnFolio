@@ -1,7 +1,7 @@
 ---
 id: ADR-0003
 title: "分支模型与合并策略：git-flow 简化 + 任务级 --no-ff + 草稿提交纪律"
-status: accepted
+status: deprecated
 date: 2026-11-13
 author: foamshadow
 tags: [se-arch]
