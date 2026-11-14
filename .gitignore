@@ -33,3 +33,6 @@ Thumbs.db
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+
+# 本地 harness 状态（hook-state 等，不入库）
+.mimosa/

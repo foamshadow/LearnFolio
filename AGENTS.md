@@ -26,7 +26,8 @@
 ## 文档体系（docs/）
 
 - 六类：specs/（受控：draft → ready → done / superseded / abandoned）、adr/（正文不可变；
-  status 单向流转 accepted → deprecated / superseded）、journal/（年份分组，一篇 = 一个事件）、
+  status 单向流转 accepted → deprecated / superseded）、journal/（年份分组，一篇 = 一个事件；
+  记录完整开发经历——事件、事故、决策讨论、复盘、执行差异；可变层，谁经历谁写）、
   learning/<作者键>/（可变：事故驱动笔记）、guides/（可变：教学与剖析文档——
   "我要学会 X"对 learning 的"X 撞了我"）、proposals/（孵化区：想法的第一落点，
   不占编号，毕业才进正式层）
@@ -112,7 +113,9 @@
 破坏性操作（Phase 0 由人类执行或确认；agent 确认链孵化中，见
 proposals/agent-confirmation-chain，毕业后取代本条）：
 
-- agent 可自主：git commit、git push（非 force）
+- 操作分级（ADR-0007）：读 / 改自主；commit 须**提交前告知**（获 auto-commit 时）或逐条审批（`wip:` 免审）；
+  `docs/*` 提交须确认；**push 须许可**（获 auto-push 时任务内免逐次审批，每次 push 后报告）
+- 任务启动时一次性申请 auto-commit / auto-push 两项独立授权（任务级生效、可随时撤销）
 - 人类执行/确认：rebase -i 整理门、任何 force push（一律
   `--force-with-lease --force-if-includes`）、打 tag、dev→main 合并、git revert -m
 - rebase 前先 `git branch backup/<branch>-<时间戳>`
@@ -120,8 +123,13 @@ proposals/agent-confirmation-chain，毕业后取代本条）：
 
 ## 提交纪律（feat 内草稿文化 + 合入严格格式）
 
-- feat 内：WIP 高频提交（一个可验证步骤一提交：编译过/测试绿即锚点），message 放宽
-  （wip:/fix: 前缀即可）——过程保留是 --no-ff 的目的，WIP 不丢人
+- feat 内：WIP 高频提交（`wip:` 前缀，message 可草）；**WIP 不要求可编译**，锚点（一个可验证步骤）
+  应编译过 / 测试绿——过程保留是 --no-ff 的目的，WIP 不丢人
+- 提交前告知：改了什么、为什么、几个（auto-commit 省等待，不省告知）；禁止静默连续提交
+- 提交粒度（ADR-0007）：整理后一个提交 = 一个完整逻辑单元——单一意图、纯格式化 / 重命名独立、
+  不攒"补一行"碎片；PR 整理后保留的每个提交必须可编译（bisect 可用）；合入必须绿（CI）
+- push 前自查：diff 完整、无半成品、无调试代码、注释到位（继承 harmony §提交纪律）
+- 消息写"做了什么 / 为什么"，不写"修复上次的…"（同源）
 - PR 开启前：rebase -i 整理为逻辑级提交序列——fixup 掉纯噪音（typo 类），保留逻辑步骤；
   整理不是 squash，禁止把整个任务压成一个提交
 - 纯文档 PR 例外：`docs/*` 分支必须**恰好一个提交**、由 GitHub squash 合入（ADR-0005）；
@@ -201,10 +209,34 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
 
 作者键用于 docs/learning/ 一级目录与 journal 文件名（见 docs/README.md）。
 
+## 继承条款（来源：harmony-wechat / foampray，2026-11-14 裁剪）
+
+判据（ADR-0008）：工具无关 + 对 5 人团队成立 + 有消费者；每条注来源，与既有条款冲突时以既有条款为准。
+
+- 事故→制度闭环：事故当天或最近一次 PR 内，journal 记事故 + 落一条带判据的条款 + 关联 PR（H §提交纪律 / 复盘）
+- 第一父链 = 任务账本：dev 第一父链只允许任务 merge 与 docs 单提交（H §分支纪律）
+- 收口冻结 + 文档对齐核对：文档不得落后于代码，先改文档再合并（H §里程碑收口）
+- 变更链同 PR 同步：改 spec 同批改下游文档与验收（H §文档驱动）
+- 注释写"为什么"；TODO 落码，不留在聊天记录（H §注释要求）
+- 验收如实记账：受限 / 跳过 / 缺失都入账，不粉饰（H 复盘）
+- 任务收尾：日志 / 进度 / 代码一起提交（F §任务收尾检查）
+
+改写继承（按 PR 门禁）：
+
+- 提交前确认 → 双授权 + WIP 免审（ADR-0007）
+- push 凭指令 → 任务级 auto-push + 每次报告
+- 未完成不提交 → WIP 豁免、保留提交必须绿
+- docs 直推 dev → `docs/*` + squash（ADR-0005）
+- 里程碑表 + 收口 → roadmap + SPEC + 收口检查单（收口流程后续再优化）
+- 计划=事实 → 验收条目按实际勾选；执行差异记录进 journal；规格语义变化走 spec 变更记录
+
+不取：superpowers 插件链、ArkTS / DevEco 命令与单模块结构、课程语境概述、PERT 图、双 README 分工。
+
 ## 规范变更
 
 - 本文件的改动走 PR + review；事故驱动变更在 journal 记事故并关联 PR
-- **沉淀三问**（试错 → 文档的落位判据）：① 事故还是演进？事故 → journal 记事故 + 关联 PR；演进 → ADR。
+- **沉淀三问**（试错 → 文档的落位判据）：① 是过程还是结论？过程（事故 / 讨论 / 复盘 / 执行差异）→
+  journal（事故须关联 PR）；结论（选型 / 规则 / 策略）→ ADR；同一事件可两者都落、用 `related` 互链。
   ② 决策还是细节？决策 → ADR（含被否方案）；细节 → 本条或 guides。③ 第一个消费者是谁？
   无 → `proposals/` 孵化；有 → 随其 PR 一起到达
 - **流程冻结线**：Phase 0 收口（v0.1.0）前允许规则快速迭代；此后规则进入基线，只走 ADR 取代链 + PR，
