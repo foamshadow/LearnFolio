@@ -4,9 +4,8 @@
 修改本文件必须走 PR（见"规范变更"）。
 
 > 渐进补入：本初版只含建仓即生效的规则。后续节随任务 PR 到达——
-> 建仓后即刻以规则 PR 补提交纪律的 agent 署名（`Assisted-by` opt-out）、t0 补"验证命令"、
-> t2 补"Go 分层纪律 / 契约与生成物 / 工具版本"、t3 补提交纪律的 lefthook 配置行、t4 补"继承条款"
-> （路线见 SPEC-0001 任务分解的随带交付列与 docs/proposals/agent-attribution）。
+> t0 补"验证命令"、t2 补"Go 分层纪律 / 契约与生成物 / 工具版本"、t3 补提交纪律的 lefthook 配置行、t4 补"继承条款"
+> （路线见 SPEC-0001 任务分解的随带交付列）。
 
 ## 仓库身份
 
@@ -63,7 +62,7 @@
 
 - 一律 --no-ff：由 repo settings 只保留 "Allow merge commits" 物理强制；
   **不得开启** Require linear history（与 --no-ff 互斥）
-- merge message = PR 标题（settings 设 Default to PR title），五种格式：
+- merge message = PR 标题 + 平台附加的 ` (#N)`（settings 设 Default to PR title、正文留空；2026-11-14 实测），五种格式：
   `合并 spec-N-tM 短名：一句话`（feat→dev）/ `合并 fix 短名：一句话`（fix→dev）/
   `合并 hotfix 短名：一句话（发布 vX.Y.Z）`（hotfix→main——缺此变体则首个 hotfix PR
   会被自己的 CI 拦死）/ `合并 hotfix 短名：backport 自 vX.Y.Z`（backport→dev）/
@@ -132,6 +131,40 @@ proposals/agent-confirmation-chain，毕业后取代本条）：
 - 合并权限：3 名核心成员拥有 spec 评审权与收口合并权；非核心成员提 PR 由核心审
 - 新增依赖（Go module 与 npm 包）：PR 描述声明其许可证——MIT/Apache/BSD 可入，
   GPL 系评估传染，无许可证禁入
+
+### agent 署名（`Assisted-by`，opt-out）
+
+- **每条提交都必须带 trailer**：agent 参与的写 `Assisted-by: <harness>:<model>`，纯人类提交写
+  `Assisted-by: none`；缺席即判定违规——opt-in 下 CI 只能校验格式、不能校验存在性，漏写不可检测
+  （2026-11-14 首提交事故的直接成因）
+- 位置 = commit message **末尾的 trailer 块**（`git interpret-trailers` 可解析处；正文出现不算）；
+  键名大小写敏感；值 ASCII 无空格；多参与方各一行（键可重复），行序 = 参与顺序、**不表达权重**
+- 示例：`Assisted-by: DSH:deepseek-v4.1-flash-1017`（model 用登记表键，快照后缀照抄）；纯人类提交
+  `Assisted-by: none`
+- 重写语义（trailer **跟内容走，不跟操作走**）：无冲突 rebase / fixup / squash 原样随行；冲突解决者
+  追加自己一行；整理执行者不记；**merge commit 不记**——平台生成的合并提交不注入内容，与整理执行者同理，
+  审计与 CI 校验均以 `git log --no-merges` 为准（2026-11-14 实测：GitHub 生成的 merge commit 无法携带 trailer）
+- `author` / `committer` 恒为人类；来源是**声明（claim）非证明（proof）**，不得用于归责或能力认定
+- 身份来源：agent 自述 + 配置查证（harness model 配置 > 系统提示 model id > 自省命令）；信源冲突或
+  精确不到版本粒度时**问人，不猜**
+- 强制两层：t3 `commit-msg` 钩子 fail-closed（缺 trailer 即中止，**不代填**——静默补 `none` 会把 agent
+  提交误标为人类提交）；t0 CI 逐提交正则校验（唯一能挡 `--no-verify` 的一层）；PR 描述同列该串（与 trailer 互补）
+- 校验正则：`^Assisted-by: (none|[A-Za-z][A-Za-z0-9]*:[a-z0-9][a-z0-9.-]*)$`；决策理由见 ADR-0004
+
+harness 键（闭合登记；新值 = 本表加一行 + PR）：
+
+| 键 | 全称 |
+| --- | --- |
+| `DSH` | DeepSeek Harness |
+| `ClaudeCode` | Claude Code |
+| `ZCode` | ZCode（GLM） |
+
+model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自行附加日期——commit date 已在提交里）：
+
+| 键 | 官方全称 |
+| --- | --- |
+| `deepseek-v4.1-flash-1017` | DeepSeek-V4.1-Flash-1017 |
+| `glm-5.3-flash` | GLM-5.3-Flash |
 
 ## TODO 注释规范
 
