@@ -72,8 +72,8 @@
   `合并 Phase N 收口：vX.Y.Z`（dev→main）；PR 标题由 CI 正则校验
   （六条完整 alternation + 分支方向矩阵，正则见 SPEC-0001-A5）；
   **合并界面不得手改 message 字段**（Default to PR title 已预填，手改 = 账本行失守）
-- 文档 PR 无 merge 提交：PR 标题即落地提交主题 `docs: …`，账本行 = 该提交；squash 的标题 / 正文
-  取自 PR 标题与描述，描述末尾同列 `Assisted-by` trailer（见 ADR-0005）
+- 文档 PR 无 merge 提交：PR 标题即落地提交主题，GitHub 同样追加 ` (#N)`（实测：`docs: … (#3)`），
+  账本行 = 该提交；squash 的标题 / 正文取自 PR 标题与描述，描述末尾同列 `Assisted-by` trailer（见 ADR-0005）
 - feat 同步 dev：仅在冲突或 ci-ok 红疑基线时 `git rebase dev`；同步即作废 approved 需重审；
   分支保护不开 "Require up to date"（与整理门过约束死锁，补偿 = push 触发 CI，见 ADR-0003）
 - hotfix 合回 main 并 tag 后，经 **backport/ 分支回流 dev（禁 cherry-pick，机理见
