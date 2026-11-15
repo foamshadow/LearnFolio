@@ -1,0 +1,101 @@
+# CI 门禁：单 workflow、多 job，required check 只挂 ci-ok（ADR-0009）
+# 触发：PR（含 edited——改标题必须重新校验）+ push 到 dev/main（全量跑，事后发现语义冲突）
+name: CI
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+  pull-requests: read # dorny/paths-filter 读 PR 文件列表
+
+jobs:
+  changes:
+    name: changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      api: ${{ steps.filter.outputs.api }}
+    steps:
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            web:
+              - 'apps/web/**'
+              - 'packages/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'package.json'
+            api:
+              - 'apps/api/**'
+
+  web:
+    name: web
+    needs: changes
+    if: always() && (github.event_name == 'push' || needs.changes.outputs.web == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder
+        run: echo "web job placeholder — t1 填充 lint / typecheck / build"
+
+  api:
+    name: api
+    needs: changes
+    if: always() && (github.event_name == 'push' || needs.changes.outputs.api == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder
+        run: echo "api job placeholder — t2 填充 lint / build / test / gen:check"
+
+  title:
+    name: title
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate PR title and branch direction
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: bash .github/scripts/check-title.sh
+
+  attribution:
+    name: attribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check Assisted-by trailers
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: bash .github/scripts/check-attribution.sh
+
+  ci-ok:
+    name: ${{ github.event_name == 'push' && 'ci-ok (push)' || 'ci-ok' }}
+    needs: [changes, web, api, title, attribution]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aggregate results
+        env:
+          EVENT: ${{ github.event_name }}
+          CHANGES: ${{ needs.changes.result }}
+          WEB: ${{ needs.web.result }}
+          API: ${{ needs.api.result }}
+          TITLE: ${{ needs.title.result }}
+          ATTRIBUTION: ${{ needs.attribution.result }}
+          WEB_CHANGED: ${{ needs.changes.outputs.web }}
+          API_CHANGED: ${{ needs.changes.outputs.api }}
+        run: bash .github/scripts/aggregate.sh
