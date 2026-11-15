@@ -237,12 +237,13 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
 | TEST | 紫 | 测试用块 |
 | MARK | 橙 | 标记某一行（如设定的参数） |
 | TODO | 黄 | 标准待办提示 |
+| WARN | 琥珀黄 | 警告/风险，需注意但未必是缺陷 |
 | BUG | 红 | 代码级 bug |
 | FIXME | 红 | 功能级缺陷，需修复 |
 | update | 绿 | 提示可能需要更新 |
 | Tips | 灰蓝 | 小提示 |
 
-注：颜色由 IDE 的 TODO 高亮插件（如 TODO Tree）渲染，配置随 .vscode 基线分发（t5 入库）；
+注：颜色由 IDE 的 TODO 高亮插件（如 TODO Tree）渲染，配置随 .vscode 基线分发（已随 t5 入库，PR #20）；
 语义为主、颜色为辅。进 main 的 BUG / FIXME 须关联 SPEC 编号或 issue 号。
 
 ## 作者键登记
