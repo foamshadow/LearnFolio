@@ -125,6 +125,35 @@ proposals/agent-confirmation-chain，毕业后取代本条）：
 - rebase 前先 `git branch backup/<branch>-<时间戳>`
 - feat 分支寿命 > 3 天或提交数 > 30 = 任务粒度过大信号，拆 tM 而非加子分支垫层
 
+## 多工作树（worktree）
+
+同一仓库允许多工作树并行（多个 agent / 多任务的物理隔离）。**一条分支只能在一个工作树里 checkout**；
+工作树只影响本地检出的分支，不改变远端、PR、CI 与分支保护的任何规则。
+
+- 位置与命名：任务工作树一律在仓库根的 `.worktrees/<短名段>`（已 gitignore，不入库）；短名冲突时用
+  `<前缀>-<短名>`。主工作树**优先**常驻 `dev`（或 `main`）；并行任务必须进工作树，单人串行时可临时在主树
+  切分支，但不得与任何工作树占用同一分支
+- 创建：`git worktree add --no-track -b <分支> .worktrees/<短名> dev`——**加 `--no-track`**：从
+  `origin/dev` 起手（或 `branch.autoSetupMerge=always`）会自动把新分支的 upstream 设成 `origin/dev`，
+  导致 `git status` 误报 ahead/behind、`git pull` 把 dev 合进任务分支；`push.default=upstream` 时裸
+  `git push` 还会尝试推 dev（默认 `simple` 会因分支名不匹配而拒绝，但不应依赖这层）。漏加则
+  `git branch --unset-upstream` 补救
+- upstream：任务分支只允许跟踪同名远端分支（首次 `git push -u origin <分支>`）；发现指向 `dev` / `main` 立即改正
+- 基线：从最新 `dev` 切；落后时在**该工作树内** `git rebase dev` 后再开 PR（approved 后改写会作废审批，同提交纪律）
+- 锁：长时 agent 会话用 `git worktree lock --reason "<harness>/<任务>" .worktrees/<短名>`，结束或合入后
+  `unlock`。锁不是互斥锁——只在 `.git/worktrees/<id>/` 写 locked 标记，阻止 `prune` / `remove` / `move`
+  动这棵树，不阻止任何进程读写文件或跑 git；并发安全仍靠下面的纪律
+- 清理：分支合并并删除后 `git worktree remove .worktrees/<短名>`；**禁止**对他人活跃工作树执行
+  `remove --force` / `prune`；`git worktree prune` 只清已删目录的元数据，执行前先 `git worktree list`
+- 并发纪律：工作树共享同一个 `.git`（对象库、hooks、仓库 config）——禁止进入他人工作树执行
+  commit / rebase / checkout / 删除分支；`git gc --prune=now`、修改 hooks 或仓库级 config 前先确认无其他
+  活跃工作树；fetch 与只读命令可并行
+- 运行态隔离：不同工作树可同时起 dev server / 数据库，端口与 `.env` 本地错开（`.env` 不入库）；
+  共享的只有 git 对象与 hooks（t3 lefthook 落地后需验证 hook 内的 root 路径）
+- 授权：auto-commit / auto-push 按工作树各自申请、不跨工作树继承（ADR-0007）；一个工作树的 agent
+  不得代另一个提交或推送
+- 分支七类命名与方向规则不变；工作树不改变 `feat/*` 等分支的创建与 PR 方向
+
 ## 提交纪律（feat 内草稿文化 + 合入严格格式）
 
 - feat 内：WIP 高频提交（`wip:` 前缀，message 可草）；**WIP 不要求可编译**，锚点（一个可验证步骤）
