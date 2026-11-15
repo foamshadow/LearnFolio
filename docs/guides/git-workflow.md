@@ -4,7 +4,7 @@ author: foamshadow
 date: 2026-11-13
 status: draft
 tags: [se-arch, tool-git]
-related: [ADR-0003, SPEC-0001]
+related: [ADR-0003, ADR-0005, ADR-0007, ADR-0009, SPEC-0001]
 ---
 
 # LearnFolio Git 流程讲解
@@ -30,12 +30,12 @@ main ─────────────────────────
 ## 一个任务的一生（以 t2 为例）
 
 1. **开工**：从 dev 切 `feat/spec-0001-t2-api-healthz`（spec 号 + 任务号 + 短名，从名字反查施工图，不依赖任何外部系统）；说明任务内容，申请 **auto-commit / auto-push** 两项独立授权（ADR-0007，任务级生效、可撤销）
-2. **开发（agent 自主）**：高频小步提交——`wip:` 前缀，**提交前告知**（获 auto-commit 时不必等确认，未获时逐条审批、WIP 免审）；锚点（一个可验证步骤）应编译过 / 测试绿；push 需许可（auto-push 任务内免逐次，每次报告）。过程提交保留是有意的：bisect 可定位到任务内具体一步，agent 试错轨迹是本项目的学习素材
+2. **开发（agent 自主）**：高频小步提交——`wip:` 前缀，**提交前告知**（获 auto-commit 时不必等确认，未获时逐条审批、WIP 免审）；锚点（一个可验证步骤）应编译过 / 测试绿；push 需许可（auto-push 任务内免逐次，每次报告）；**每条提交带 `Assisted-by` trailer**（agent 参与写 `<harness>:<model>`、纯人类写 `none`，缺席即违规——本地由 commit-msg 钩子 fail-closed 拦截（t3 起），CI 逐提交校验兜 `--no-verify`；信源查证顺序与键表见 AGENTS 提交纪律节·agent 署名）。过程提交保留是有意的：bisect 可定位到任务内具体一步，agent 试错轨迹是本项目的学习素材
 3. **整理（人类执行）**：PR 开启前 `rebase -i`——fixup 掉 typo 链、保留逻辑步骤；禁止把任务整体 squash 成单提交（那会废掉过程保留；**纯文档 PR 例外**——恰好一个提交，由 GitHub squash 合入）；整理前打 backup 分支；push 用 `--force-with-lease --force-if-includes`（本操作 Phase 0 由人类执行；agent 确认链提案孵化中，见 proposals/）
-4. **PR**：标题 = 账本行，五种格式之一（如 `合并 spec-0001-t2 api-healthz：Go 后端最小服务`；五类 merge 变体与 docs 变体、方向矩阵见 AGENTS 分支与版本节）；CI 在 PR 开启时正则校验标题；ci-ok 是必需检查（自 t0 合入起）。合并时 GitHub 会在标题后追加 ` (#N)`——账本行实际形态是 `标题 (#N)`、正文为空（2026-11-14 实测）。**纯文档 PR 例外**：走 `docs/*` 分支，标题直接用 `docs: …`，squash 后账本行为 `docs: … (#N)`（平台同样追加 PR 号，2026-11-14 实测；author 保留其人、committer 变为 GitHub，签名由 GitHub 代签）。**文档写回窗口**：PR 创建后、评审通过前，把变更记录 / 验收勾选 / 实测结果作为追加提交推入同一 PR（代码任务允许多提交）。每次追加都会触发 `synchronize` 全量重跑，代码 PR 的 docs 提交也会重跑两端构建——机制使然，不是配置错误。需要 `PR #N` 或 CI 实测的记账行只能在这个窗口落；合并后再补属执行差异。
+4. **PR**：标题 = 账本行，五种格式之一（如 `合并 spec-0001-t2 api-healthz：Go 后端最小服务`；五类 merge 变体与 docs 变体见 AGENTS 分支与版本节）；CI 在 PR 开启时校验标题（六变体正则，`edited` 显式在触发列表——改标题必重跑）与**分支方向矩阵**（dev←feat/fix/backport/docs、main←hotfix/dev，其余 base×head 组合一律拒绝——只验标题字面拦不住"feat PR 提到 main"类方向错误）；ci-ok 是唯一必需检查（2026-11-15 起已在 dev / main 配置），它是聚合 job：下挂 changes / title / attribution / web / api 的**结果矩阵**，skipped 是否合法取决于触发上下文——读法见 ci-gate.md。PR 描述按模板填写（变更 / 验证 / 新增依赖许可证 / 检查单），**末尾 `Assisted-by` 占位行照实填——squash 合入时 PR 描述成为落地提交正文，该行即其 trailer**（漏填 = squash 提交被 attribution job 判红）。合并时 GitHub 会在标题后追加 ` (#N)`——账本行实际形态是 `标题 (#N)`、正文为空（2026-11-14 实测）。**纯文档 PR 例外**：走 `docs/*` 分支，标题直接用 `docs: …`，squash 后账本行为 `docs: … (#N)`（平台同样追加 PR 号，2026-11-14 实测；author 保留其人、committer 变为 GitHub，签名由 GitHub 代签）。**文档写回窗口**：PR 创建后、评审通过前，把变更记录 / 验收勾选 / 实测结果作为追加提交推入同一 PR（代码任务允许多提交）。每次追加都会触发 `synchronize` 全量重跑，代码 PR 的 docs 提交也会重跑两端构建——机制使然，不是配置错误。需要 `PR #N` 或 CI 实测的记账行只能在这个窗口落；合并后再补属执行差异。
 5. **合入 dev**：代码任务用 merge 按钮（settings 只开 merge commit 与 squash，rebase 关闭）→ `--no-ff` 产生 merge 节点；纯文档 PR 用 squash 按钮 → 一条普通提交、无节点（ADR-0005）。为什么代码要节点：git 能快进时会抹平分支不留痕——有的任务成节点、有的消失，账本形状不一致；节点统一后 `git log --first-parent dev` 一任务一行。合并后分支自动删，过程史不丢（merge 节点让提交从 dev 永久可达）
 6. **并行**：不要求追平 dev（"up to date" 保护已关——开着会造成 dev 每动一次、全部在飞 PR 被迫改写重审的死锁）；只在真冲突或 ci 红疑基线时 `git rebase dev` 同步
-7. **兜底**：dev 每次被合入触发 push CI 全量跑（docs squash 合并同样全量——当前是 ADR-0009-D2 的设计取舍，优化候选见 `proposals/ci-gate-optimizations`）——红 = 两个各自绿的分支合坏了（语义冲突），开 `fix/` 修或 `git revert -m 1` 退回（注意：被 revert 的任务重合入不带回内容，需 revert 那个 revert）
+7. **兜底（事后发现）**：push run 只验证新 base 自身——"待合 PR + 新 base"的组合冲突要等合入 dev 后才由 push run 全量变红暴露（关闭 "Require up to date" 后它是唯一兜底观测面，补偿的是**可见性**不是拦截力，ADR-0009 D2）；docs squash 合并同样触发 push 全量——当前是 D2 的设计取舍，优化候选见 `proposals/ci-gate-optimizations`。红 = 两个各自绿的分支合坏了（语义冲突落地）：暂停后续合入，开 `fix/` 修或 `git revert -m 1` 退回（注意：被 revert 的任务重合入不带回内容，需 revert 那个 revert）
 
 ## 修复与 hotfix
 
@@ -76,4 +76,4 @@ git log <feat 分支>                  →  过程史（任务内部怎么推进
 
 ## 延伸
 
-ADR-0003（分支与合并的完整决策链与被否方案）、SPEC-0001 任务分解节（t0-t6 实例）、proposals/（agent 确认链提案，孵化中）。
+ADR-0003（分支与合并的完整决策链与被否方案）、ADR-0005（双合并策略：任务 --no-ff、文档 squash）、ADR-0007（提交 / 推送授权模型）、ADR-0009（CI 门禁）、ci-gate.md（门禁结构与读法详解）、proposals/ci-gate-optimizations.md（门禁优化候选与"已接受、不修"清单）、SPEC-0001 任务分解节（t0-t6 实例）、proposals/（agent 确认链提案，孵化中）。
