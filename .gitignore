@@ -36,3 +36,6 @@ Thumbs.db
 
 # 本地 harness 状态（hook-state 等，不入库）
 .mimosa/
+
+# 多工作树（本地并行任务目录，不入库）
+.worktrees/
