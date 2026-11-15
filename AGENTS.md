@@ -41,6 +41,10 @@
 - spec 的 ready 须至少一名非作者核心成员批准（bootstrap 例外仅 SPEC-0001，已记录于该 spec）
 - 作者键在本文档登记、永不更改、与 GitHub 用户名解耦；状态与标签词表见 docs/README.md（闭合）
 - learning 与网站内容解耦：发布 = 显式蒸馏进独立内容源（Phase 1 定），本目录不直通网站
+- **任务 PR 的文档写回窗口 = PR 创建后、评审通过前**：变更记录、验收勾选、实测结果随任务 PR 追加提交
+  （代码任务多提交合法；`docs/*` 单提交约束下用 amend，force push 需人类确认）；需要 PR 号或 CI 实测的
+  记账行只能落在这个窗口。合并后才发现遗漏 = 执行差异，记 journal 并在后续文档 PR 补，不改写已合入的账本行
+  （approved 后追加会因 Dismiss stale approvals 作废审批）
 - 新文档类型：加目录 + _template.md + 在 docs/README.md 地图登记一行
 
 ## 分支与版本
