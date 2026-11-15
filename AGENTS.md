@@ -4,7 +4,7 @@
 修改本文件必须走 PR（见"规范变更"）。
 
 > 渐进补入：本初版只含建仓即生效的规则。后续节随任务 PR 到达——
-> t0 补"验证命令"、t2 补"Go 分层纪律 / 契约与生成物 / 工具版本"、t3 补提交纪律的 lefthook 配置行、t4 补"继承条款"
+> t2 补"Go 分层纪律 / 契约与生成物 / 工具版本"、t3 补提交纪律的 lefthook 配置行
 > （路线见 SPEC-0001 任务分解的随带交付列）。
 
 ## 仓库身份
@@ -180,6 +180,21 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
 | --- | --- |
 | `deepseek-v4.1-flash-1017` | DeepSeek-V4.1-Flash-1017 |
 | `glm-5.3-flash` | GLM-5.3-Flash |
+
+## 验证命令（agent 自证完成的唯一方式；未跑通不得声称完成）
+
+**生效时点**：工具链随 t1（根 Taskfile）与 t2（Go）落地——此前仓库仅含文档与 CI 骨架，纯文档改动（*.md）无需执行下表任何命令，确认编号 / 链接 / 词表自洽即可（ci:docs 立项前的轻量路径）；**t0 至 t1 之间的空档**（ci.yml 已入库、task 尚不存在）：本地无可跑命令，验证 = PR 上的 GitHub Actions 结果 + YAML 语法人工核对。
+
+| 改动范围 | 必跑 |
+| --- | --- |
+| apps/api/**/*.go | `cd apps/api && go build ./... && go test ./... && golangci-lint run ./...` |
+| apps/api 的 handler / DTO / ent schema | 追加 `task gen && task gen:check` |
+| apps/web/**/*.{ts,vue} | `pnpm --filter @learnfolio/web lint && pnpm --filter @learnfolio/web typecheck` |
+| 任何改动 | 提交前 `task ci`（CI 管线本地等价物，全绿才推） |
+
+- 生成物报错时禁止改生成物：回源头（Go struct / ent schema）改，再 task gen
+- 禁止跨 app import：apps/web 不引用 apps/api 的任何文件，唯一通道是生成的 schema.ts
+- 新增 Node 依赖一律走 pnpm-workspace.yaml 的 catalog:，不在 app 的 package.json 写死版本
 
 ## TODO 注释规范
 
