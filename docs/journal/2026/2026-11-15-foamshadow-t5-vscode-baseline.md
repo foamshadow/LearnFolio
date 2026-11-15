@@ -13,7 +13,7 @@ related: [SPEC-0001]
 
 ## 事件
 
-### 1. AGENTS 的八标记配色从未真正渲染过
+### 1. AGENTS 的标记配色从未真正渲染过
 
 `.vscode/settings.json` 基线写入后实机验收发现：NOE 渲染成橙、Tips 渲染成红，与 AGENTS
 「TODO 注释规范」表（蓝/灰蓝）不符。排查链条：色值无误 → 扩展无错位 → 读
@@ -25,8 +25,9 @@ better-todo-tree 的 package.json 才定位根因——扩展的 `useColourSchem
 AGENTS 表定下的配色在所有项目里从未按设定值渲染过，只是没人盯着验收。"写了配置"
 和"配置按预期生效"之间隔着一层默认值，不实测就发现不了。
 
-**处置**：workspace 与 user 两层均显式 `useColourScheme: false`（PR #20），实测恢复
-AGENTS 表配色。教训沉淀：配置基线的验收必须是**渲染结果比对**，不是文件写入确认。
+**处置**：workspace 层随 PR #20 写入 `useColourScheme: false`；user 层在本机同批修正
+（不入库）。实测恢复 AGENTS 表配色。教训沉淀：配置基线的验收必须是**渲染结果比对**，
+不是文件写入确认。
 
 ### 2. .gitattributes 覆盖事故（未遂）
 
@@ -45,8 +46,7 @@ t5 的"缩进规则推迟 t1/t2"讨论随之作废——文件已在，缺的只
 
 ## 决策
 
-- **WAR 不入团队基线**：AGENTS 八标记不含 WAR；用户个人层保留，user/workspace 按键合并
-  后个人机器 WAR 照常高亮，其他成员不受影响——基线守规范表，个人层自由叠加。
+- **WARN 纳入团队基线**：原个人层 `WAR` 重命名为团队标记 `WARN`（警告/风险，琥珀黄 `#FFC107`，warning 图标 + 加粗）；AGENTS 表、项目 `.vscode/settings.json`、全局规则与 user settings 同步——警告不再与 BUG / FIXME 的红色冲突，个人层不再保留 WAR。
 - **推荐插件从克制转向开箱即用**：判定由"有仓库证据才推荐"放宽为"不预设成员有自我
   配置"（foamshadow 决策），加入 alabaster / color-highlight / vscode-icons / errorlens
   等通用体验件；errorlens 为顺原则补入（新人不必先学 PROBLEMS 面板）。
