@@ -1,0 +1,22 @@
+{
+  "recommendations": [
+    "fanaticpythoner.better-todo-tree",
+    "editorconfig.editorconfig",
+    "golang.go",
+    "vue.volar",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "nuxtr.nuxt-vscode-extentions",
+    "ms-azuretools.vscode-containers",
+    "redhat.vscode-yaml",
+    "mhutchie.git-graph",
+    "mikestead.dotenv",
+    "nicolaiverbaarschot.alabaster-variant-theme",
+    "naumovs.color-highlight",
+    "vscode-icons-team.vscode-icons",
+    "usernamehw.errorlens"
+  ],
+  "unwantedRecommendations": [
+    "gruntfuggly.todo-tree"
+  ]
+}
