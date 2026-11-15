@@ -242,7 +242,7 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
 | update | 绿 | 提示可能需要更新 |
 | Tips | 灰蓝 | 小提示 |
 
-注：颜色由 IDE 的 TODO 高亮插件（如 TODO Tree）渲染，配置随 .vscode 基线分发（t5 入库）；
+注：颜色由 IDE 的 TODO 高亮插件（如 TODO Tree）渲染，配置随 .vscode 基线分发（已随 t5 入库，PR #20）；
 语义为主、颜色为辅。进 main 的 BUG / FIXME 须关联 SPEC 编号或 issue 号。
 
 ## 作者键登记
