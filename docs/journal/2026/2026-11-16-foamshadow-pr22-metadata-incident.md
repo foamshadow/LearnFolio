@@ -33,7 +33,7 @@ PR head 的 CI 是绿的：attribution 检查的是 PR 分支提交，而未来 
 | 11-16 | #24 重新落内容，+1 号；#25 追加 journal，+1 号；历史出现 revert/redo 对 |
 | 11-16 | 人类决定不用 revert 链；force reset dev 回 `1d622c3`，保护临时放行后恢复 |
 | 11-16 | #26 用新 PR re-land，得到干净的 `56d750d`；#22–#25 成为孤儿 PR 页面 |
-| 11-17 | C6 `pr-meta`（PR #27）、评审协议毕业（PR #28）、ADR-0010 定稿 |
+| 11-17 | C6 `pr-meta`（PR #27）、评审协议毕业（PR #28）已合入；ADR-0010 合入 #29，ADR-0005 标 `deprecated` |
 
 ## 决策
 
