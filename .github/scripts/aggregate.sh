@@ -24,12 +24,13 @@ allow_only() {
   err "${name}: 意外结果 '${result}'（允许：$*）"
 }
 
-echo "event=${EVENT} changes=${CHANGES:-} web=${WEB:-} api=${API:-} title=${TITLE:-} attribution=${ATTRIBUTION:-}"
+echo "event=${EVENT} changes=${CHANGES:-} web=${WEB:-} api=${API:-} title=${TITLE:-} pr_meta=${PR_META:-} attribution=${ATTRIBUTION:-}"
 
 if [[ "$EVENT" == "pull_request" ]]; then
   # PR：上下文相关 job 必须是 success；分端 job 只允许"判定无需运行"的 skipped
   need_success changes "${CHANGES:-}"
   need_success title "${TITLE:-}"
+  need_success pr-meta "${PR_META:-}"
   need_success attribution "${ATTRIBUTION:-}"
 
   check_side() {
@@ -43,12 +44,13 @@ if [[ "$EVENT" == "pull_request" ]]; then
   check_side web "${WEB:-}" "${WEB_CHANGED:-}"
   check_side api "${API:-}" "${API_CHANGED:-}"
 else
-  # push：无 PR 上下文，changes / title 必须被跳过；分端与署名必须真跑
+  # push：无 PR 上下文，changes / title / pr-meta 必须被跳过；分端与署名必须真跑
   need_success web "${WEB:-}"
   need_success api "${API:-}"
   need_success attribution "${ATTRIBUTION:-}"
   allow_only changes "${CHANGES:-}" skipped
   allow_only title "${TITLE:-}" skipped
+  allow_only pr-meta "${PR_META:-}" skipped
 fi
 
 if (( fail != 0 )); then

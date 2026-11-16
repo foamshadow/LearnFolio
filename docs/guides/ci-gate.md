@@ -21,7 +21,7 @@ related: [ADR-0009, SPEC-0001, ADR-0003, ADR-0004]
 
 **workflow（工作流）**：放在 `.github/workflows/` 目录下的一个 YAML 文件，声明"**什么事件发生时，自动执行哪些任务**"。本仓库只有一个：`ci.yml`。
 
-**job（作业）**：workflow 里的一个执行单元。GitHub 会为每个 job 分配一台全新的虚拟机，把仓库检出进去，跑完销毁。`ci.yml` 里定义了五个检查 job + 一个聚合 job（共六个，下节见图）。
+**job（作业）**：workflow 里的一个执行单元。GitHub 会为每个 job 分配一台全新的虚拟机，把仓库检出进去，跑完销毁。`ci.yml` 里定义了六个检查 job + 一个聚合 job（共七个，下节见图）。
 
 **check（检查状态）**：每个 job 跑完，会向它所属的 PR / 分支上报一个状态（官方叫"结论"），这就是 PR 页面上那一个个红绿灯。常见结论有五种：`success`（绿）、`failure`（红）、`cancelled`（红，被取消）、`skipped`（灰，"这个 job 决定不跑"）、`neutral`（灰，"判定为不适用"）——此外还有 `timed_out` 等更少见的结论。
 
@@ -40,9 +40,10 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
 ├─ changes        改动范围探测                ├─ web / api（不受 changes 裁剪，全量）
 ├─ web            Node 侧 lint/typecheck/build ├─ attribution（before..after 区间）
 ├─ api            Go 侧 build/test/lint
-├─ title          标题六变体 + 方向矩阵        （changes / title 跳过：
-├─ attribution    逐提交署名 trailer            它们依赖 PR 上下文，push 下必误报）
-└─ ci-ok          聚合 ← 分支保护唯一必需检查
+├─ title          标题六变体 + 方向矩阵
+├─ pr-meta        PR 描述末行 trailer / 无评审段
+├─ attribution    逐提交署名 trailer        （changes / title / pr-meta 跳过：
+└─ ci-ok          聚合 ← 分支保护唯一必需检查   它们依赖 PR 上下文，push 下必误报）
 ```
 
 一个实现细节：pull_request 事件下，Actions 实际检出的代码是 PR 的**合并预演**（`refs/pull/N/merge`——把 head 合进 base 的试合并结果），check 结果则挂在 PR head 的 SHA 上。所以"PR 绿"意味着"合并进 base 之后的样子能通过"——这就是 CI 能在合并前验证合并结果的原因；PR 页面上的文本冲突提示则来自 GitHub 自己的 mergeability 计算，与 Actions 无关。
@@ -65,7 +66,7 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
 
 **规定**：所有检查住进一个 `ci.yml`，分支保护只把 `ci-ok` 一个名字设为必需。
 
-**防的事故**：保护配置与 workflow 脱节。required check 按"名字"配置——若五个检查 job 各自设必需，以后每增删一个 job 都要有人记得去改保护设置（忘了就出现"新 job 谁也不管它"或"删掉的 job 让按钮永久禁用"）。聚合后入口唯一：**job 怎么变，门禁入口永远是 `ci-ok` 这一个名字**。
+**防的事故**：保护配置与 workflow 脱节。required check 按"名字"配置——若六个检查 job 各自设必需，以后每增删一个 job 都要有人记得去改保护设置（忘了就出现"新 job 谁也不管它"或"删掉的 job 让按钮永久禁用"）。聚合后入口唯一：**job 怎么变，门禁入口永远是 `ci-ok` 这一个名字**。
 
 ### 设计二：`if: always()` 硬约束 + 结果矩阵（D3）——全篇最重要的一节
 
@@ -73,22 +74,22 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
 
 | 触发 | 必须 `success` | 允许 `skipped` |
 | --- | --- | --- |
-| PR | changes / title / attribution | web / api——且仅当 changes 判定"无相关改动" |
-| push | web / api / attribution | changes / title（事件无 PR 上下文） |
+| PR | changes / title / pr-meta / attribution | web / api——且仅当 changes 判定"无相关改动" |
+| push | web / api / attribution | changes / title / pr-meta（事件无 PR 上下文） |
 
 **防的事故**要拆两层讲。
 
 第一层：为什么必须有 `if: always()`？GitHub 的默认行为是——`ci-ok` 通过 `needs` 声明它依赖其他 job，**任何被依赖的 job 失败时，聚合 job 直接被跳过**。而地基概念里刚说过：skipped 在 GitHub 语义里算成功。所以缺 `always()` 的后果不是"门禁卡住等你修"，而是**静默放行**：web 测试红 → ci-ok 被跳过 → skipped 算成功 → 合并按钮照常点亮。门禁失效时没有任何声音。
 
-第二层：为什么只有 `always()` 还不够？设想聚合脚本写成"所有依赖不是 failure 就算通过"——某个 job 因为作者 `if:` 条件写错而从未运行（skipped），聚合依然全绿。所以脚本核对的是矩阵：**每个触发场景下，哪些 job 必须是 success、哪些 job 允许 skipped、skipped 的条件是什么**。一句话读法：**skipped 不是白名单通行证，必须与触发上下文绑定**——PR 下 title / attribution 被跳过是门禁漏洞（等价于没校验），push 下跳过它们才是设计（它们依赖 PR 上下文，push 事件里必然误报）。
+第二层：为什么只有 `always()` 还不够？设想聚合脚本写成"所有依赖不是 failure 就算通过"——某个 job 因为作者 `if:` 条件写错而从未运行（skipped），聚合依然全绿。所以脚本核对的是矩阵：**每个触发场景下，哪些 job 必须是 success、哪些 job 允许 skipped、skipped 的条件是什么**。一句话读法：**skipped 不是白名单通行证，必须与触发上下文绑定**——PR 下 title / pr-meta / attribution 被跳过是门禁漏洞（等价于没校验），push 下跳过它们才是设计（它们依赖 PR 上下文，push 事件里必然误报）。
 
-另外 `needs` 必须把 title 与 attribution 也列进去：否则这两个违规只产生旁路红灯，聚合看不到它们，合并按钮照样亮。
+另外 `needs` 必须把 title、pr-meta 与 attribution 也列进去：否则这些违规只产生旁路红灯，聚合看不到它们，合并按钮照样亮。
 
-**操作**（读法）：聚合脚本首行打印**五个被依赖 job** 的结果快照（`event=… changes=… web=… api=… title=… attribution=…`——另带 event 字段；ci-ok 自己不在 `needs` 里，不会出现在快照中），每处违规以 `::error::` 注解直接显示在 Checks 摘要上——读红灯从这行快照开始，不用逐个 job 翻日志。
+**操作**（读法）：聚合脚本首行打印**六个被依赖 job** 的结果快照（`event=… changes=… web=… api=… title=… pr_meta=… attribution=…`——另带 event 字段；ci-ok 自己不在 `needs` 里，不会出现在快照中），每处违规以 `::error::` 注解直接显示在 Checks 摘要上——读红灯从这行快照开始，不用逐个 job 翻日志。
 
 ### 设计三：push 双触发，定位是"事后发现"（D2）
 
-**规定**：push 到 dev / main 也触发全量检查，但跳过 changes 探测与标题校验。
+**规定**：push 到 dev / main 也触发全量检查，但跳过 changes、title、pr-meta。
 
 **为什么 push 要跑**：这正是 git-workflow.md 第 6 步讲过的自由换来的义务——仓库关闭了 "Require up to date"（它与 rebase 整理门死锁：dev 每动一次，全部在飞 PR 被迫改写、approval 全部作废）。关闭之后，"PR + 最新 dev 的组合是否完好"没有合并前的保证者，push run 是**唯一的兜底观测面**。
 
@@ -108,11 +109,19 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
 
 **为什么 push 也要查**（本地钩子 t3 落地后理论上已经拦了一道）：三层答案。其一，`git commit --no-verify` 能绕过任何本地钩子，CI 是唯一绕不过的一层；其二，squash 合入的落地提交根本不经过 PR run——它的 trailer 来自 PR 描述末尾的占位行（描述在 squash 时成为提交正文），只有 push 校验能看到它；其三，checkout 需要 `fetch-depth: 0`（完整历史）才能取到提交区间，浅克隆拿不到。跳过 merge 提交的依据不是"它由平台生成"，而是 merge 提交不注入内容、**结构上无法携带 trailer**（ADR-0004）。
 
+### 补充：PR 描述元数据（pr-meta，C6）
+
+**规定**：`pr-meta` 只在 `pull_request` 事件运行，校验 PR 描述最后一行是合法 `Assisted-by` trailer、正文无 `## 评审…` 记录段；并入 `ci-ok`；push 下 skipped，由矩阵放行。
+
+**为什么**：docs PR 的 squash 正文取自 PR 描述。PR run 校验的是分支提交，`title` 只管标题，`attribution` 只管提交——**描述是死角**。`pr-meta` 是合并前的 body backstop。
+
+**边界**：body 编辑不换 head SHA，check 之后仍可改描述，检查可能 stale；它不能替代合并时的快照。docs 单提交不查（ADR-0005 单提交拟撤销；分支可多提交，squash 后仍一个）。
+
 ### 设计六：空分端 job 占位（D7）
 
 **规定**：web / api 两个 job 在 t1 / t2 填入真实构建之前，只是各跑一行 `echo`——**该侧有改动**的代码 PR 上，空 job 真运行并报 success；changes 判定该侧无相关改动时（docs-only、单侧改动等）才 skipped。
 
-**为什么占位**：让六个 job 的 `needs` 结构从第一天就稳定，聚合逻辑可以在 t0 就真刀真枪验证。注意这**不是**为了 required 配置不悬空——required 只挂 ci-ok，跟 web / api 是否存在无关。
+**为什么占位**：让七个 job 的 `needs` 结构从第一天就稳定，聚合逻辑可以在 t0 就真刀真枪验证。注意这**不是**为了 required 配置不悬空——required 只挂 ci-ok，跟 web / api 是否存在无关。
 
 ### 设计七：`ci-ok (push)` 显示名消歧（D4）
 
@@ -125,7 +134,7 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
 每条按"场景 → 为什么 → 正确姿势"展开。
 
 - **"有几个灰色的 skipped，但页面算我过了"**
-  skipped 在 GitHub 语义里就是成功，但它是否**合法**取决于触发上下文——回看设计二矩阵：这次触发下，这个 job 该不该跑？PR 下 title / attribution 被跳过 = 门禁漏洞（等价于没校验），不是省事。**正确姿势**：先对矩阵判"该不该 skipped"，再决定要不要管它。
+  skipped 在 GitHub 语义里就是成功，但它是否**合法**取决于触发上下文——回看设计二矩阵：这次触发下，这个 job 该不该跑？PR 下 title / pr-meta / attribution 被跳过 = 门禁漏洞（等价于没校验），不是省事。**正确姿势**：先对矩阵判"该不该 skipped"，再决定要不要管它。
 
 - **"CI 全绿，合进 dev 一定没问题"**
   push 是事后发现（设计三）：它验证的是 base 自身，"PR + 新 base"的组合要等合入后才见分晓。dev push 红 = 语义冲突落地。**正确姿势**：绿灯后照常合并，但合并后扫一眼 dev 的 push run；红了立即暂停后续合入，开 `fix/` 修或 `git revert -m 1` 回滚。
