@@ -10,7 +10,7 @@
 
 <!--
 自检（提交前删掉本段注释）：
-- 标题 = 落地主题；docs 单意图（提交数按现行 ADR-0005）；描述只含最终变更，无评审记录/试错
+- 标题 = 落地主题；docs 单意图（提交数不限，ADR-0010）；描述只含最终变更，无评审记录/试错
 - 描述末行是 Assisted-by trailer，其后无内容；PASS 评论含 target / body-sha256 / Reviewer
 - docs 用 PASS 快照合并；code 走 --no-ff；不要手改 merge message
 -->
