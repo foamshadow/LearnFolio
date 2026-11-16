@@ -17,13 +17,15 @@ LearnFolio 是一个学习驱动的全栈工程实践项目：前端承载内容
 
 ## 状态
 
-策划期收尾，Phase 0 待启动（施工图见 SPEC-0001）。
+Phase 0 进行中：t0（CI 骨架）、t4（遗产整理）、t5（.vscode 基线）已合入 `dev`，
+下一步 t1（workspace 与 Nuxt 基线）。施工图见
+[SPEC-0001](docs/specs/0001-phase-0-scaffold.md)，文档地图见 [docs/README.md](docs/README.md)。
 
 ## 开发模型
 
 迭代增量 + 每增量内微瀑布（spec → 实现 → 验收 → 复盘）+ SCM 变更控制（分支模型与 tag 基线）；
-每 Phase 收口复盘，产出 journal 与学习笔记。阶段路线见 `docs/proposals/roadmap.md`（演进中的草稿，
-各 Phase 开工时逐段毕业为 spec）。
+每 Phase 收口复盘，产出 journal 与学习笔记。阶段路线见
+[docs/proposals/roadmap.md](docs/proposals/roadmap.md)（演进中的草稿，各 Phase 开工时逐段毕业为 spec）。
 
 ## License
 
