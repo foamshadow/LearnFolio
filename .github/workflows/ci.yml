@@ -65,6 +65,15 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
         run: bash .github/scripts/check-title.sh
 
+  pr-meta:
+    name: pr-meta
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check PR description metadata
+        run: bash .github/scripts/check-pr-meta.sh
+
   attribution:
     name: attribution
     runs-on: ubuntu-latest
@@ -83,7 +92,7 @@ jobs:
 
   ci-ok:
     name: ${{ github.event_name == 'push' && 'ci-ok (push)' || 'ci-ok' }}
-    needs: [changes, web, api, title, attribution]
+    needs: [changes, web, api, title, pr-meta, attribution]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -95,6 +104,7 @@ jobs:
           WEB: ${{ needs.web.result }}
           API: ${{ needs.api.result }}
           TITLE: ${{ needs.title.result }}
+          PR_META: ${{ needs.pr-meta.result }}
           ATTRIBUTION: ${{ needs.attribution.result }}
           WEB_CHANGED: ${{ needs.changes.outputs.web }}
           API_CHANGED: ${{ needs.changes.outputs.api }}
