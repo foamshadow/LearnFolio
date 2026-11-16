@@ -20,12 +20,12 @@ related: [ADR-0004, ADR-0009]
 - model 表只有 `glm-5.3-flash`，没有 `glm-5.3`；两者是不同模型，不能混用；
 - 当前规则只在评审评论写 `Reviewer: <harness>:<model>`，commit 只有 `Assisted-by`
   （作者/参与者），**没有 commit 层的 reviewer 署名**；
-- 过去 #27 / #28 / #29 的 PASS 评论字段不全或归因不准确，但决定不补历史。
+- 过去 #27 / #28 / #29 的 PASS 评论**缺席**（评审在会话内完成、未落 PR 评论）；评审协议 #28 刚毕业即连续三个 PR 未按状态机运行；决定不补历史。
 
 ## 决策
 
 1. **当前不新增 commit 级 review 署名**，也不改 AGENTS 的 harness/model 表；只在 journal 记录。
-2. **不回溯修正** #27 / #28 / #29 的 PASS 评论。
+2. **不补历史 PASS 评论**：#27 / #28 / #29 的评审在会话内完成，未落 PR 评论。
 3. 当前 `merge-integrity` proposal 的 PR **不要求 review 署名**，先按 docs PR 走。
 4. 新开一个 ADR 准备项，覆盖：
    - 评论层 `Reviewer` 与 commit 层 `Reviewed-by` 的边界；
