@@ -214,6 +214,16 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
 | `deepseek-v4.1-flash-1017` | DeepSeek-V4.1-Flash-1017 |
 | `glm-5.3-flash` | GLM-5.3-Flash |
 
+### 评审协议（review）
+
+- 状态机：`REVIEW: BLOCKED`（评审者）→ `REVIEW-FIX`（作者）→ `REVIEW: PASS`（评审者）；一条评论承载一个状态，不在评论区聊天；ID 用 `B` / `N` / `Q`，阻塞项必须带证据；两轮上限，第二轮仍 BLOCKED 则拆 PR、缩范围或升级给人决策。
+- `REVIEW: PASS` 是评审结论，不是 GitHub approval；同账号自审路径 = `COMMENTED` 评审 + `REVIEW: PASS` 评论 + 人类明确合并授权；`required_approving_review_count=0`（单人多 agent 阶段）。
+- PASS 必须带 `target <sha>`、`body-sha256: <sha256(title + "\n" + body)>`、末行 `Reviewer: <harness>:<model>`（键表同 `Assisted-by`，人类写 `none`）；`REVIEW-FIX` 末行写 `Author: <harness>:<model>`。
+- PASS 后 PR 标题/描述冻结：任何编辑作废 PASS，必须重新 PASS 并重新快照；PR 描述只放最终变更，末行 `Assisted-by` trailer 之后不得有内容。
+- docs：squash，合并用 PASS 快照生成正文；code：`--no-ff`，merge commit 正文为空，分支提交 trailer 由 attribution 校验。
+- 人类授权后 agent 可执行合并（跑脚本）；未授权不得 merge。评审状态只在评论，PR 描述不写评审过程。
+- docs 单提交按现行 ADR-0005；拟立的新 ADR 部分取代撤销，以 ADR 为准。
+
 ## 验证命令（agent 自证完成的唯一方式；未跑通不得声称完成）
 
 **生效时点**：工具链随 t1（根 Taskfile）与 t2（Go）落地——此前仓库仅含文档与 CI 骨架，纯文档改动（*.md）无需执行下表任何命令，确认编号 / 链接 / 词表自洽即可（ci:docs 立项前的轻量路径）；**t0 至 t1 之间的空档**（ci.yml 已入库、task 尚不存在）：本地无可跑命令，验证 = PR 上的 GitHub Actions 结果 + YAML 语法人工核对。
