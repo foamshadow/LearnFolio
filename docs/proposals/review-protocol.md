@@ -150,7 +150,7 @@ draft ──作者自检──→ ready
 - **一次批量授权**：任务开工时一次问清 auto-commit / auto-push / 评审修正的 force push / docs PR `PASS` 后直接 squash 合入；之后不再逐次请示。
 - **agent 间用 PR 交接**：`REVIEW:` ↔ `REVIEW-FIX:` 是消息，不是给人看的汇报；人类不需要转述内容，只在需要决策时被点名。
 - **汇报粒度**：`BLOCKED` 只在需要人类拍板时上报；`PASS+merged` 合并后一条；中间状态不刷屏。
-- **可选自动化**：CI 增 `pr-meta` job——docs/* 恰好一个提交、PR 描述末尾 trailer 合法；这能挡住「描述没同步」类问题。它改门禁矩阵，属 ADR-0009 范围，拟另登记为 `proposals/ci-gate-optimizations.md` 的 C6 候选（尚未建行），不塞进本协议。
+- **可选自动化**：CI 增 `pr-meta` job——PR 描述末尾 trailer 合法、正文无评审段；这能挡住「描述没同步」类问题。docs 单提交不查（ADR-0005 单提交拟撤销）。已落地为 `proposals/ci-gate-optimizations.md` 的 C6（PR #27）；它改门禁矩阵，属 ADR-0009 范围，部分取代待补。
 - **度量**：每 PR 记录评审轮次、状态评论数、ready→merge 墙钟；目标 ≤2 轮、≤3 条状态评论（BLOCKED / FIX / PASS）。
 
 ## 毕业条件
