@@ -1,7 +1,7 @@
 ---
 id: ADR-0005
 title: "双合并策略：任务 --no-ff、文档 squash"
-status: accepted
+status: deprecated
 date: 2026-11-14
 author: foamshadow
 tags: [se-arch, tool-git]

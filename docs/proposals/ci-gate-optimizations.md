@@ -46,4 +46,4 @@ t0 落地后（PR #9），CI 的真实形态第一次可测量：PR run 与 push
 ## 演进记录
 
 - 2026-11-15 由 t0 落地后的 CI 性能盘点建立（基线：PR #9 run 与 dev push run 各 15 秒，均为 4 job 执行 / 2 job skipped）。
-- 2026-11-17 C6 落地（PR #27）：新增 `pr-meta` job，校验 PR 描述末行 trailer、正文无评审段；不查 docs 单提交（ADR-0005 单提交拟撤销）；ADR-0009 部分取代待补。
+- 2026-11-17 C6 落地（PR #27）：新增 `pr-meta` job，校验 PR 描述末行 trailer、正文无评审段；不查 docs 单提交（ADR-0010 已撤销）；ADR-0009 部分取代待补。

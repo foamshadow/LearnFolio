@@ -4,7 +4,7 @@ author: foamshadow
 date: 2026-11-17
 status: draft
 tags: [se-arch, tool-git]
-related: [ADR-0004, ADR-0005, ADR-0007, ADR-0009, SPEC-0001]
+related: [ADR-0004, ADR-0005, ADR-0007, ADR-0009, ADR-0010, SPEC-0001]
 ---
 
 # 评审协议讲解：从 BLOCKED 到 PASS，以及 PASS 之后
@@ -75,7 +75,7 @@ N1 `<file>:<line>` — <一句话建议>
 - 可延后：是 / 否
 
 ## 已核验
-- 形状：diff 单意图（docs 提交数按现行 ADR-0005）
+- 形状：diff 单意图（docs 提交数不限，ADR-0010）
 - 元数据：标题 / 描述 / trailer / 分支方向
 - CI：required 全绿；skipped 符合上下文
 - 事实：<抽查项>
@@ -114,7 +114,7 @@ Reviewer: <harness>:<model>
 
 | # | 检查 | 方法 |
 | --- | --- | --- |
-| 1 | 形状 | base/head、diff 是否单意图、有无无关文件；docs 提交数按现行 ADR-0005 |
+| 1 | 形状 | base/head、diff 是否单意图、有无无关文件；docs 提交数不限（ADR-0010） |
 | 2 | 落地物元数据 | PR 标题（squash / merge 主题）、PR 描述（docs 的 squash 正文；code 不入提交）、末尾 trailer、分支方向 |
 | 3 | CI | required 全绿；skipped 是否符合触发上下文（docs-only / push） |
 | 4 | 事实 | 日期、编号、PR 号、链接、命令、数字逐条对仓库或平台数据；真实先例必须在仓库里存在 |
@@ -153,7 +153,7 @@ Reviewer: <harness>:<model>
 | --- | --- | --- |
 | 合入 | squash | `--no-ff` |
 | 落地正文 | PR 描述（快照） | merge commit 正文为空 |
-| 提交数 | 现行 ADR-0005 恰好 1；拟立的新 ADR 部分取代撤销 | 多提交；每个非 merge 提交带 trailer |
+| 提交数 | 单意图、提交数不限（ADR-0010） | 多提交；每个非 merge 提交带 trailer |
 | 元数据风险 | 描述 = 落地正文，最敏感 | merge subject / 分支 trailer |
 
 ## 常见误区
@@ -169,6 +169,6 @@ Reviewer: <harness>:<model>
 ## 延伸
 
 - 规则原文：`AGENTS.md`「评审协议」子节；`docs/guides/git-workflow.md` 第 4 步。
-- 修复与撤回：`merge-integrity` proposal（评审中；快照合并、P2a/P2b、撤回窗口、拟立的历史修复 ADR）。
+- 修复与撤回：`merge-integrity` proposal（评审中；快照合并、P2a/P2b、撤回窗口、ADR-0010）。
 - CI 门禁：`docs/guides/ci-gate.md`（pr-meta/C6 的位置与结果矩阵）。
-- 来源：ADR-0004（署名）、ADR-0005（squash）、ADR-0007（授权）、ADR-0009（CI 门禁）。
+- 来源：ADR-0004（署名）、ADR-0005（squash）、ADR-0007（授权）、ADR-0009（CI 门禁）、ADR-0010（历史修复与 docs 分支）。

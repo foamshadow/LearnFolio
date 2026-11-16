@@ -42,7 +42,7 @@
 - 作者键在本文档登记、永不更改、与 GitHub 用户名解耦；状态与标签词表见 docs/README.md（闭合）
 - learning 与网站内容解耦：发布 = 显式蒸馏进独立内容源（Phase 1 定），本目录不直通网站
 - **任务 PR 的文档写回窗口 = PR 创建后、评审通过前**：变更记录、验收勾选、实测结果随任务 PR 追加提交
-  （代码任务多提交合法；`docs/*` 单提交约束下用 amend，force push 需人类确认）；需要 PR 号或 CI 实测的
+  （代码任务多提交合法；docs 分支可追加提交，force push 需人类确认；ADR-0010 已撤销单提交约束）；需要 PR 号或 CI 实测的
   记账行只能落在这个窗口。合并后才发现遗漏 = 执行差异，记 journal 并在后续文档 PR 补，不改写已合入的账本行
   （approved 后追加会因 Dismiss stale approvals 作废审批）
 - 新文档类型：加目录 + _template.md + 在 docs/README.md 地图登记一行
@@ -61,14 +61,14 @@
   git merge"不可执行）——从 dev 切出，`git merge <hotfix tag>`（tag 永久自解释，
   优于已删分支的裸 SHA），PR 回 dev
 - docs/<短名>：纯文档改动（`docs/**` 与根文档），从 dev 切出，PR 回 dev，**squash 合入**——
-  恰好一个提交，落地为一条普通提交（无 merge 节点，见 ADR-0005）
+  单意图，落地为一条普通提交（无 merge 节点，见 ADR-0005；提交数不限，ADR-0010）
 
 分支名固定两段 `前缀/短名`，名称内不得再含 `/`；短名段为 ASCII kebab-case：`^[a-z0-9]+(-[a-z0-9]+)*$`（如 `feat/spec-0001-t2-api-healthz` 的短名段 = `spec-0001-t2-api-healthz`）；前缀取上述七类之一
 
 合并与同步（完整机理与决策链见 ADR-0003）：
 
 - 合入策略分两类（ADR-0005）：**代码任务一律 --no-ff**（settings 保留 merge commit 并物理强制）；
-  **纯文档 PR 走 squash**——`docs/*` 分支、恰好一个提交，落地为一条普通提交、无 merge 节点；
+  **纯文档 PR 走 squash**——`docs/*` 分支、单意图，落地为一条普通提交、无 merge 节点；提交数不限（ADR-0005 / ADR-0010）；
   **不得开启** Require linear history（与 --no-ff 互斥），rebase merge 保持关闭
 - merge message = PR 标题 + 平台附加的 ` (#N)`（settings 设 Default to PR title、正文留空；2026-11-14 实测），五种格式：
   `合并 spec-N-tM 短名：一句话`（feat→dev）/ `合并 fix 短名：一句话`（fix→dev）/
@@ -165,8 +165,8 @@ proposals/agent-confirmation-chain，毕业后取代本条）：
 - 消息写"做了什么 / 为什么"，不写"修复上次的…"（同源）
 - PR 开启前：rebase -i 整理为逻辑级提交序列——fixup 掉纯噪音（typo 类），保留逻辑步骤；
   整理不是 squash，禁止把整个任务压成一个提交
-- 纯文档 PR 例外：`docs/*` 分支必须**恰好一个提交**、由 GitHub squash 合入（ADR-0005）；
-  多提交先在本地整理——"禁止整体 squash"只约束代码任务
+- 纯文档 PR 例外：`docs/*` 分支单意图、由 GitHub squash 合入（ADR-0005 / ADR-0010）；
+  多提交合法，不必先在本地压成一个提交——"禁止整体 squash"只约束代码任务
 - 整理时机只允许 PR 前或评审期间增量；**approved 后不再改写**，要改退回重审
   （settings 开 Dismiss stale pull request approvals：新 push 自动作废 approval——
   纪律机制化；副作用 = 评审期间追加 commit 也作废 approval 需重审，与规则一致）
@@ -222,7 +222,7 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
 - PASS 后 PR 标题/描述冻结：任何编辑作废 PASS，必须重新 PASS 并重新快照；PR 描述只放最终变更，末行 `Assisted-by` trailer 之后不得有内容。
 - docs：squash，合并用 PASS 快照生成正文；code：`--no-ff`，merge commit 正文为空，分支提交 trailer 由 attribution 校验。
 - 人类授权后 agent 可执行合并（跑脚本）；未授权不得 merge。评审状态只在评论，PR 描述不写评审过程。
-- docs 单提交按现行 ADR-0005；拟立的新 ADR 部分取代撤销，以 ADR 为准。
+- docs 单意图、提交数不限（ADR-0010）。
 
 ## 验证命令（agent 自证完成的唯一方式；未跑通不得声称完成）
 
@@ -298,7 +298,7 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
   journal（事故须关联 PR）；结论（选型 / 规则 / 策略）→ ADR；同一事件可两者都落、用 `related` 互链。
   ② 决策还是细节？决策 → ADR（含被否方案）；细节 → 本条或 guides。③ 第一个消费者是谁？
   无 → `proposals/` 孵化；有 → 随其 PR 一起到达
-- **流程冻结线**：Phase 0 收口（v0.1.0）前允许规则快速迭代；此后规则进入基线，只走 ADR 取代链 + PR，
-  **不重写已发布历史**
+- **流程冻结线**：Phase 0 收口（v0.1.0）前允许规则快速迭代；此后规则进入基线，只走 ADR 取代链 + PR；
+  历史默认不重写，message-only rewrite 按 ADR-0010 受控例外，内容仍不重写。
 - 重决策推翻走 ADR 取代链（新 ADR 声明取代，不改旧文件）
 - 本文件不自带版本号，版本语义由 tag 基线承担
