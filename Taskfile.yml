@@ -12,12 +12,18 @@ tasks:
       - task: ci:web
 
   ci:web:
-    desc: Web 端 lint / format / typecheck / build
+    desc: Web 端 catalog / lint / format / typecheck / build
     cmds:
+      - task: check:catalog
       - pnpm --filter @learnfolio/web lint
       - pnpm --filter @learnfolio/web format:check
       - pnpm --filter @learnfolio/web typecheck
       - pnpm --filter @learnfolio/web build
+
+  check:catalog:
+    desc: 校验 apps / packages 的直接依赖均走 catalog 或 workspace
+    cmds:
+      - node .github/scripts/check-catalog.mjs
 
   format:
     desc: 用 Prettier 格式化 Web 代码
