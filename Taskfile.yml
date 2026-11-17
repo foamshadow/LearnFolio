@@ -1,0 +1,37 @@
+version: '3'
+
+tasks:
+  setup:
+    desc: 安装依赖并生成 Nuxt 类型
+    cmds:
+      - pnpm install
+
+  ci:
+    desc: 本地 CI 等价物
+    cmds:
+      - task: check:catalog
+      - task: ci:web
+
+  ci:web:
+    desc: Web 端 lint / format / typecheck / build
+    cmds:
+      - pnpm --filter @learnfolio/web lint
+      - pnpm --filter @learnfolio/web format:check
+      - pnpm --filter @learnfolio/web typecheck
+      - pnpm --filter @learnfolio/web build
+
+  check:catalog:
+    desc: 校验 apps / packages 的直接依赖均走 catalog 或 workspace
+    cmds:
+      - node .github/scripts/check-catalog.mjs
+
+  format:
+    desc: 用 Prettier 格式化 Web 代码
+    cmds:
+      - pnpm --filter @learnfolio/web format
+
+  dev:web:
+    desc: 启动 Web 开发服务器（自动加载根 .env）
+    dotenv: ['.env']
+    cmds:
+      - pnpm --filter @learnfolio/web dev

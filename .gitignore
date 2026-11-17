@@ -34,8 +34,9 @@ Thumbs.db
 !.vscode/settings.json
 !.vscode/extensions.json
 
-# 本地 harness 状态（hook-state 等，不入库）
+# 本地 harness 状态（hook-state、工具缓存等，不入库）
 .mimosa/
+.tools/
 
 # 多工作树（本地并行任务目录，不入库）
 .worktrees/
