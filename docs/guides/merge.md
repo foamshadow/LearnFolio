@@ -72,10 +72,10 @@ PASS 之后、合并之前的窗口里，PR 描述被追加了评审清单，位
 4. 不一致 = PASS 已失效（描述被改过），**不合并**，退回重审拿新 PASS；
 5. 一致后执行合并——
    - docs：把描述存成文件，`gh pr merge <N> --squash --subject "<标题> (#N)" --body-file <快照文件>`；
-   - code：`gh pr merge <N> --merge`，**不传** `--subject` / `--body`，让仓库设置"Default to PR title、正文留空"生效。注意：这与 proposal §1 的脚本命令（显式 `--subject "<标题>"`）**有意不同**——默认标题路径已被实测（AGENTS 注 2026-11-14：subject = 标题 + 平台追加 ` (#N)`、正文留空），显式传参反而落进未实测的开放问题 3。本指南先按实测过的路径执行，merge.sh 定稿（proposal 毕业）时反向统一 proposal §1；
+   - code：`gh pr merge <N> --merge`，**不传** `--subject` / `--body`，让仓库设置"Default to PR title、正文留空"生效。注意：这与 proposal §1 的脚本命令（显式 `--subject "<标题>"`）**有意不同**，且 ` (#N)` 实测（#33）后差异变得实质——显式 subject 被平台逐字落地、**不追加** ` (#N)`，proposal §1 的 code 命令照抄会丢 ` (#N)`；默认标题路径则由 settings 追加（AGENTS 注 2026-11-14 实测）。merge.sh 定稿（proposal 毕业）时按本路径反向统一 proposal §1；
 6. 合并后立刻核对落地提交：`git fetch origin && git log -1 --format="%s%n%b" origin/dev`——subject 与正文逐字对快照。
 
-第 5 步 docs 命令里 `--subject` 的 ` (#N)` 后缀行为是显式开放问题（proposal 开放问题 3）：实测验收标准已定——dev 上 subject = `标题 (#N)`、body = 快照——但没跑过之前，手动合并后多看一眼落地 subject 是必要动作。
+第 5 步 docs 命令的 ` (#N)` 后缀行为已实测结案（proposal 开放问题 3，2026-11-17 #33 首用）：显式 `--subject "<标题> (#N)"` 被 GitHub 逐字落地、不重复追加，落地 body 与快照逐字节一致。验收标准（dev 上 subject = `标题 (#N)`、body = 快照）已满足；合并后核对落地提交仍是固定动作，只是预期值如今已知。
 
 ### 与 C6 pr-meta 的关系：有意冗余
 
@@ -159,7 +159,7 @@ dev 开着 force push 禁令，合规 rewrite 需要"合法地 force 一次"。�
 未落地、执行到对应步骤时按上文手动流程 + 逐条留痕的（全部出自 proposal 毕业条件与开放问题）：
 
 - `scripts/merge.sh` / `retract.sh` 未写；
-- ` (#N)` 自定义 subject 行为未实测（开放问题 3）；
+- ~~` (#N)` 自定义 subject 行为未实测~~ 已实测结案（2026-11-17，#33：显式 subject 逐字落地、不重复追加；见 proposal 演进记录）；
 - 撤回窗口长度未定稿（开放问题 1；当前按建议值：24h + 下一任务分支前取先到）；
 - ruleset 迁移 vs break-glass 未决（开放问题 2），迁移作为单独 infra 任务；
 - 脚本落位（根目录还是 `tools/`）与 `task merge` / `task retract` 封装依赖 t1 的根 Taskfile（开放问题 4）；
