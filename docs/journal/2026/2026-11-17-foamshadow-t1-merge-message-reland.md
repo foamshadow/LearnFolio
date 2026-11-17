@@ -62,6 +62,8 @@ P2a 只改 merge commit message，保留 PR 号且不新增评审；但改写后
 P2b 多消耗一个 PR 号、多一次评审，但 #36 的 merge commit 真实落在 dev 上，硬溯源成立。
 这次选择按“平台溯源 > 省号”的优先级，而不是按“改动最小”。
 
+这里的 message-only / 内容不 rewrite 边界来自 ADR-0010；t1 的验收范围见 SPEC-0001。
+
 ## P2b 执行
 
 - **备份**：`backup/dev-b42eee2-20261117`，本地与远端都指向 `b42eee2`；
@@ -95,6 +97,6 @@ P2b 多消耗一个 PR 号、多一次评审，但 #36 的 merge commit 真实�
 - **文档同步**：本次同 PR 修正 proposal §1 的 code 命令，并在 merge guide 的手动六步
   补 `--match-head-commit`；不再等 merge.sh 毕业。
 - **演练记账**：P2b 条件（备份、窗口、头部、保护恢复、旧 PR 标注、journal）全部走通；
-  merge-integrity 的“撤回演练”毕业条件由本次真实事故覆盖。
+  merge-integrity 的“撤回演练”毕业条件基本覆盖，clone 通知仍待团队渠道完成（见下方未完成）。
 - **未完成**：merge.sh / retract.sh 仍未实现；ruleset 迁移未做；其他 clone 的 reset
   通知需由团队渠道完成。
