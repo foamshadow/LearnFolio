@@ -134,3 +134,4 @@ LearnFolio 是学习驱动 + 文档驱动 + agent 全栈开发的实践项目（
 - 2026-11-15 t5 标记集扩展（PR #20）：TODO 表新增 WARN（警告/风险，琥珀黄 `#FFC107`，warning 图标 + 加粗）——原个人层 `WAR` 改为团队标记 `WARN`；A7 与任务表同步为九标记，AGENTS 表、`.vscode/settings.json`、全局规则与 user settings 一致
 - 2026-11-16 docs 收尾：README 状态由"Phase 0 待启动"改为进行中（t0 / t4 / t5 已合入 dev，下一步 t1）；A5 实测清单标题计数更正为五项（正文枚举 ①–⑤，原"四项"系 ⑤ 并入后未同步）；③ 保留待测（触发条件为构建变重、解锁 C2 前再验）、④ 留 A10 收口 PR 同 SHA 双 run 自然结案、⑤ 由"先合入后补配"路径规避（API 预配置未使用，不再验证）；t5 已合入，剩余任务序列更新为 t1 → t2 → t3 → t6（原序列记录不改写）
 - 2026-11-17 A5 补 pr-meta（ADR-0011）：结果矩阵、push 跳过集合与 `needs` 同步 #27 起已并入 `ci-ok` 的 `pr-meta`；A5 文本滞后属执行差异，本次补记，不改动既有任务序列与验收编号
+- 2026-11-17 t1 落地（PR #34）：workspace 根（Node 24.20.0 / pnpm 12.19.0 / catalog）、Nuxt 4 web 骨架、根 Taskfile（setup / ci / dev:web）、Prettier 基线、catalog 校验、真实 web job 与 onboarding 首段；A1 / A2 完成，A4 首段到达；干净 clone 实测 task setup 35s、task ci 7s。
