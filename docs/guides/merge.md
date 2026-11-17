@@ -164,9 +164,9 @@ dev 开着 force push 禁令，合规 rewrite 需要"合法地 force 一次"。�
 - `scripts/merge.sh` / `retract.sh` 未写；
 - ~~` (#N)` 自定义 subject 行为未实测~~ 已实测结案（2026-11-17，#33：显式 subject 逐字落地、不重复追加；见 proposal 演进记录）；
 - 撤回窗口长度未定稿（开放问题 1；当前按建议值：24h + 下一任务分支前取先到）；
-- ruleset 迁移 vs break-glass 未决（开放问题 2），迁移作为单独 infra 任务；
-- 脚本落位（根目录还是 `tools/`）与 `task merge` / `task retract` 封装依赖 t1 的根 Taskfile（开放问题 4）；
-- 旧 PR 页面的标注方式未定（开放问题 5；见上文 P2a / P2b 段的执行口径）。
+- ruleset 迁移 vs break-glass 未决（开放问题 2），迁移作为单独 infra 任务；break-glass 已有手工实战（2026-11-17 #34→#36，整 payload PUT）；
+- 脚本落位（根目录还是 `tools/`）与 `task merge` / `task retract` 封装待决策（开放问题 4；t1 根 Taskfile 已就绪）；
+- ~~旧 PR 页面的标注方式未定~~ 已有实战口径（开放问题 5，2026-11-17 #34：评论 Superseded by #36 + journal 映射；见上文 P2a / P2b 段）。
 
 proposal 的 pilot 毕业门槛：merge.sh 落地后至少 3 个 PR（docs 与代码各 ≥1）用它合并、0 次"PASS 后描述变更导致落地正文不一致"、` (#N)` 验证通过；外加一次撤回演练与一次敏感数据桌面演练。在此之前，本指南的手动流程就是现行做法。
 

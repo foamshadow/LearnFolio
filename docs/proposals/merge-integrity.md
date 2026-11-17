@@ -43,7 +43,7 @@ adopted-as: ""
 - **评审署名双轨**（ADR-0011）：PR 状态评论的角色行（BLOCKED/PASS `Reviewer`；REVIEW-FIX `Author`）；commit 级提交前互审写 `Reviewed-by`（opt-in）；`Pi` / `glm-5.3` 已登记（与 `glm-5.3-flash` 区分）；#27–#29 的历史缺口不回填。
 - **C6 `pr-meta` 已落地**（#27）：PR 描述末行 trailer、正文无评审状态行（含 `Reviewed-by` 行）；并入 `ci-ok`；不查 docs 提交数、不校验评论层 Reviewer（ADR-0011）。
 - **ADR-0010 已 accepted**（#29）：message-only rewrite；docs 单提交撤销；ADR-0005 `deprecated`。
-- **未实现 / 未实测**：`scripts/merge.sh` / `retract.sh` 未写；ruleset vs break-glass 未定。`(#N)` 已实测结案（2026-11-17，#33：显式 subject 逐字落地、不重复追加，见演进记录）。
+- **未实现 / 未实测**：`scripts/merge.sh` / `retract.sh` 未写；ruleset 迁移未定；break-glass 已在 2026-11-17 #34→#36 手工使用（整 protection payload PUT，见 journal）。`(#N)` 已实测结案（2026-11-17，#33：显式 subject 逐字落地、不重复追加，见演进记录）。
 
 ### 1. 合入前：快照合并（P0，硬保证）
 
@@ -68,7 +68,7 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
 
 #### 手动合并警告（零成本兜底）
 
-手动点 GitHub Merge 按钮 = 绕过快照脚本。PASS 评论附以下警告，`docs/guides/merge.md` 同文（待建）：
+手动点 GitHub Merge 按钮 = 绕过快照脚本。PASS 评论附以下警告，`docs/guides/merge.md` 已同文落地（#33）：
 
 > [!WARNING]
 > 手动合并前逐项确认：
@@ -159,15 +159,15 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
 以下只列尚未决定、且会改变实现的项；已决项见 §0。
 
 1. 撤回窗口：24 小时 + 下一任务分支前（取先到）是否过短/过长？还是只按“下一次 push CI 绿之前”？
-2. 合规 rewrite：迁 ruleset + bypass actor，还是先用 break-glass 脚本？前者一劳永逸，但要改仓库保护配置。
+2. 合规 rewrite：迁 ruleset + bypass actor，还是先用 break-glass 脚本？前者一劳永逸，但要改仓库保护配置。2026-11-17 P2b 已用整 protection payload PUT 手工 break-glass；脚本仍未写，ruleset 仍未定。
 3. ~~`gh pr merge --subject` 的 `(#N)` 行为需实测~~ **已结案（2026-11-17，#33）**：自定义 subject 被平台逐字落地、**不重复追加**；docs 命令保持 `--subject "<标题> (#N)"` 现状；code 路径不显式传 subject（见演进记录）。
 4. `scripts/` 放根目录还是 `tools/`？随 t1 Taskfile 落地，还是单独 infra 任务？
-5. 旧 PR 页面标注：只改 title/description，还是另加 journal？merged PR 无法删除，标注是唯一的“软清理”。
+5. 旧 PR 页面标注：只改 title/description，还是另加 journal？merged PR 无法删除，标注是唯一的“软清理”。2026-11-17 P2b 实战口径：评论 superseded + journal 映射（#34 → #36）。
 
 ## 毕业条件
 
 - **pilot**：`scripts/merge.sh` 落地后，至少 3 个 PR（docs 与代码各至少 1 个）用它合并；0 次“PASS 后描述变更导致落地正文不一致”；`(#N)` 行为验证通过。
-- **撤回演练**：一次头部元数据错误走 P2a 或 P2b——历史干净、保护恢复、clone 通知齐全；P2a 验 0 新号，P2b 验新 PR 页面与旧 PR 标注。
+- **撤回演练**：基本完成（#34→#36，2026-11-17，P2b）：历史干净、保护恢复、旧 PR 标注；clone 通知齐全后闭项。
 - **敏感数据桌面演练**（假密钥）：轮换 + rewrite + 验证；确认 revert 不在流程里。
 - **毕业产物**：评审协议已毕业（#28，AGENTS + guide）；C6 `pr-meta` 已落地（#27）；`docs/guides/merge.md` 已落地（#33）；ADR-0009 部分取代已闭合（ADR-0011）；待做 `scripts/merge.sh` / `retract.sh`、撤回窗口规则定稿。
 - **依赖**：t1 的根 Taskfile（`task merge` / `task retract`）；ruleset 迁移作为单独 infra 任务，不塞进本 proposal 的首次落地。
@@ -188,3 +188,4 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
 - 2026-11-17 事实对齐：review-protocol #28 毕业（PASS 规则迁 AGENTS/guide）；C6 #27 落地；ADR-0010 #29 accepted（ADR-0005 `deprecated`、docs 单提交撤销）；scripts 未实现、`(#N)` 未实测。
 - 2026-11-17 开放问题 3 实测结案（#33）：`docs/guides/merge.md` 首版落地，按快照合并手动六步合并——PASS `target` / `body-sha256` 校验通过；落地 subject 的手写 `(#33)` **逐字落地、无重复追加**；落地 body 与快照逐字节一致；dev push CI 一次全绿（0 补救提交、0 额外号）。顺带证伪 proposal §1 的 code 命令：显式 `--subject "<标题>"` 因平台不追加会丢 `(#N)`，merge.sh 定稿时按 guide 的默认标题路径反向统一；同批修正两处过时记账（ADR-0009 部分取代已由 ADR-0011 闭合、`(#N)` 移出未实测清单）。
 - 2026-11-17 P2b 首次实弹（#34 → #36）：#34 按旧 §1 命令显式 `--subject` 合并，subject 缺 ` (#34)`；备份 `b42eee2`、dev reset 至 `94580a8`、旧 PR 标 superseded、#36 以默认标题路径重落 `d071f24`；保护开关与 dev push CI 均核验。§1 的 code 命令已在本条后同步修正。
+- 2026-11-17 t1 收尾对齐：同文“待建”改已落地（#33）；未实现行 / 开放问题 2 / 撤回演练补 P2b 事实；开放问题 5 增实战口径。

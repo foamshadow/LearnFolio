@@ -17,8 +17,8 @@ LearnFolio 是一个学习驱动的全栈工程实践项目：前端承载内容
 
 ## 状态
 
-Phase 0 进行中：t0（CI 骨架）、t4（遗产整理）、t5（.vscode 基线）已合入 `dev`，
-下一步 t1（workspace 与 Nuxt 基线）。施工图见
+Phase 0 进行中：t0（CI 骨架）、t4（遗产整理）、t5（.vscode 基线）、
+t1（workspace 与 Nuxt 基线）已合入 `dev`，下一步 t2（apps/api）。施工图见
 [SPEC-0001](docs/specs/0001-phase-0-scaffold.md)，文档地图见 [docs/README.md](docs/README.md)。
 
 ## 开发环境
