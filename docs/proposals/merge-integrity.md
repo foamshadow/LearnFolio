@@ -56,14 +56,14 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
   1. 取 PR 当前 `title/body`；
   2. 校验末行是 `Assisted-by` trailer、正文无评审状态行（REVIEW / Reviewer / Author / Reviewed-by；**有意与 C6 冗余**：脚本不依赖 CI 时序，C6 只是 PR 时的 backstop）；
   3. 与 PASS 评论的 hash 比对；不一致即作废 PASS，退回重审；同时要求 PASS 评论末行有 `Reviewer:`；
-  4. docs 用快照合并：`gh pr merge --squash --subject "<title> (#N)" --body-file <snapshot>`；code 用 `gh pr merge --merge --subject "<title>"`（merge commit 正文为空）。
+  4. docs 用快照合并：`gh pr merge --squash --subject "<title> (#N)" --body-file <snapshot> --match-head-commit <target>`；code 用 `gh pr merge --merge --match-head-commit <target>`（不传 subject/body，默认标题由仓库设置追加 ` (#N)`；merge commit 正文为空）。
 - 作者在 PASS 后不得编辑 title/body；编辑即作废 PASS。
 - 第一次使用前验证 `(#N)` 后缀：自定义 subject 是否被平台重复追加。验收标准固定为“dev 上 subject = `标题 (#N)`、body = 快照”。已于 #33 首用实测通过：subject 逐字落地（手写的 `(#33)` 无重复追加）、body 与快照逐字节一致。
 
 #### docs 与 code 分路径
 
-- **docs**：squash；快照 body 生成落地正文；`gh pr merge --squash --subject "<title> (#N)" --body-file <snapshot>`。
-- **code**：`--no-ff`；merge commit 正文为空；快照只冻结 title / 描述；脚本用 `gh pr merge --merge --subject "<title>"`（不带 body）；分支提交的 trailer 由 attribution 校验。
+- **docs**：squash；快照 body 生成落地正文；`gh pr merge --squash --subject "<title> (#N)" --body-file <snapshot> --match-head-commit <target>`。
+- **code**：`--no-ff`；merge commit 正文为空；快照只冻结 title / 描述；脚本用 `gh pr merge --merge --match-head-commit <target>`（不传 subject/body，默认标题路径追加 ` (#N)`）；分支提交的 trailer 由 attribution 校验。
 - **PASS 后改描述**：作废 PASS，需重新 PASS（新 target/hash）并重新快照。
 
 #### 手动合并警告（零成本兜底）
@@ -187,3 +187,4 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
 - 2026-11-16 第二轮决策：ADR-0010 方向（dev/main/tag message-only；内容不允许；journal 留痕）；docs 单提交拟撤销；review-protocol 计划先毕业。后续 11-17 已落地（review #28、ADR #29）。
 - 2026-11-17 事实对齐：review-protocol #28 毕业（PASS 规则迁 AGENTS/guide）；C6 #27 落地；ADR-0010 #29 accepted（ADR-0005 `deprecated`、docs 单提交撤销）；scripts 未实现、`(#N)` 未实测。
 - 2026-11-17 开放问题 3 实测结案（#33）：`docs/guides/merge.md` 首版落地，按快照合并手动六步合并——PASS `target` / `body-sha256` 校验通过；落地 subject 的手写 `(#33)` **逐字落地、无重复追加**；落地 body 与快照逐字节一致；dev push CI 一次全绿（0 补救提交、0 额外号）。顺带证伪 proposal §1 的 code 命令：显式 `--subject "<标题>"` 因平台不追加会丢 `(#N)`，merge.sh 定稿时按 guide 的默认标题路径反向统一；同批修正两处过时记账（ADR-0009 部分取代已由 ADR-0011 闭合、`(#N)` 移出未实测清单）。
+- 2026-11-17 P2b 首次实弹（#34 → #36）：#34 按旧 §1 命令显式 `--subject` 合并，subject 缺 ` (#34)`；备份 `b42eee2`、dev reset 至 `94580a8`、旧 PR 标 superseded、#36 以默认标题路径重落 `d071f24`；保护开关与 dev push CI 均核验。§1 的 code 命令已在本条后同步修正。
