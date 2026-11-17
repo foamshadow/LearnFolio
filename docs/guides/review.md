@@ -4,7 +4,7 @@ author: foamshadow
 date: 2026-11-17
 status: draft
 tags: [se-arch, tool-git]
-related: [ADR-0004, ADR-0005, ADR-0007, ADR-0009, ADR-0010, SPEC-0001]
+related: [ADR-0004, ADR-0005, ADR-0007, ADR-0009, ADR-0010, ADR-0011, SPEC-0001]
 ---
 
 # 评审协议讲解：从 BLOCKED 到 PASS，以及 PASS 之后
@@ -33,13 +33,13 @@ draft ──作者自检──→ ready
 
 ### 三套评论
 
-| 评论 | 谁发 | 作用 |
-| --- | --- | --- |
-| `REVIEW: BLOCKED` | 评审者 | 第一轮完整清单；列出 B/N/Q，阻塞项必须带证据 |
-| `REVIEW-FIX` | 作者 | 一次性修完，逐 ID 报 fixed/deferred/rejected |
-| `REVIEW: PASS` | 评审者 | 第二轮闭环 + 回归 + 元数据通过；带 target/hash/Reviewer |
+| 评论 | 谁发 | 作用 | 末行 |
+| --- | --- | --- | --- |
+| `REVIEW: BLOCKED` | 评审者 | 第一轮完整清单；列出 B/N/Q，阻塞项必须带证据 | `Reviewer: <harness>:<model>` |
+| `REVIEW-FIX` | 作者 | 一次性修完，逐 ID 报 fixed/deferred/rejected | `Author: <harness>:<model>` |
+| `REVIEW: PASS` | 评审者 | 第二轮闭环 + 回归 + 元数据通过；带 target/hash | `Reviewer: <harness>:<model>` |
 
-一条评论承载一个状态；行内评论只用于定位，结论回到汇总评论。ID 跨轮稳定：`B` 阻塞、`N` 非阻塞、`Q` 提问。
+一条评论承载一个状态；行内评论只用于定位，结论回到汇总评论。ID 跨轮稳定：`B` 阻塞、`N` 非阻塞、`Q` 提问。三套状态评论都带角色行；这是协议软要求——CI 不校验评论，缺失不阻断合并，但会在时间线上留下“这条状态是谁发的”缺口。
 
 ## 为什么这样设计
 
@@ -108,7 +108,7 @@ merge: <squash|--no-ff>
 Reviewer: <harness>:<model>
 ````
 
-`Reviewer` / `Author` 的键表与 `Assisted-by` 相同；人类写 `none`。同账号下这是**声明**，不是 GitHub approval。
+`Reviewer` / `Author` / `Reviewed-by` 的键表与 `Assisted-by` 相同；人类写 `none`。同账号下这些是**声明**，不是 GitHub approval。
 
 ## 一次评审的完整清单
 
@@ -139,13 +139,23 @@ Reviewer: <harness>:<model>
 - **合并动作**：人类先授权，agent 再执行合并（跑脚本）；未授权不得 merge。
 - **`Reviewer` 是声明**：GitHub 不能证明评论是哪个 runtime 发的；它让人知道该看哪份结论，不构成平台证明。
 
+## 两条署名轨道
+
+- **PR 级**：所有状态评论的角色行（BLOCKED / PASS: `Reviewer`；REVIEW-FIX: `Author`）；软要求，CI 不校验；PR 描述不写评审状态。
+- **commit 级**：`Reviewed-by` trailer，仅当重要 commit 在**提交前**由另一评审者（agent 或人类）审完整个待提交内容；opt-in，缺失不判违规；提交后再审走下一个 commit / PR，不回头改旧 commit。
+- **范围与失效**：`Reviewed-by` 表示整个 commit 的待提交内容都被审过；只审部分文件不写。内容变更（amend 改树 / 冲突 rebase / fixup）使声明失效；tree 不变可保留。
+- **互审**：reviewer 与同一 commit 的 `Assisted-by` 参与者不同；merge commit 不写。人类评审写 `none`，具体人名以 PR 评论 / journal 为准。
+- **键表闭合**：`Pi` 与 `glm-5.3` 已登记；`glm-5.3` ≠ `glm-5.3-flash`，不能互相代替。未登记 runtime 先走 AGENTS 表登记 PR，再用 `Reviewer` / `Reviewed-by`。
+- **历史不回填**：#27–#29 的 PR PASS 与历史 commit 级评审均不补发、不改写；以 journal 为准，规则向前。
+- **仍是声明**：`Reviewer` / `Reviewed-by` 不构成平台证明；同账号下尤其如此。
+
 ## PASS 的冻结与快照
 
 - PASS 评论带 `target <sha>`、`body-sha256: sha256(title + "\n" + body)`、末行 `Reviewer`。
 - PASS 后 PR 标题/描述**冻结**；任何编辑都作废 PASS，必须重新 PASS 并重新快照。
 - docs：合并用 PASS 快照生成 squash 正文，不读实时描述。code：merge commit 正文为空；快照只冻结 title / 描述，分支提交 trailer 由 attribution 校验。
 - 手动合并 = 绕过快照：必须逐项确认标题、描述末行 trailer、body hash、CI、方向、合并方式；合并后立刻检查落地提交。
-- `pr-meta`（C6）是 PR 时的 body backstop：查末行 trailer、无评审记录段；它**不能**保证 PASS 之后描述没变，硬保证仍是快照合并。
+- `pr-meta`（C6）是 PR 时的 body backstop：查末行 trailer、拒绝评审状态行（`REVIEW` / `Reviewer` / `Author` / `Reviewed-by` 开头）；它**不校验**评论层 Reviewer 或 commit 的 `Reviewed-by`（事件 payload 不含评论；commit 由 attribution 校验），也**不能**保证 PASS 之后描述没变，硬保证仍是快照合并。
 
 ## docs 与 code 的落地物
 
@@ -154,6 +164,7 @@ Reviewer: <harness>:<model>
 | 合入 | squash | `--no-ff` |
 | 落地正文 | PR 描述（快照） | merge commit 正文为空 |
 | 提交数 | 单意图、提交数不限（ADR-0010） | 多提交；每个非 merge 提交带 trailer |
+| 评审记录 | PR 状态评论的角色行；squash 落地提交不保留分支 `Reviewed-by` | PR 状态评论 + 分支提交的 `Reviewed-by`（提交前互审，opt-in）；merge commit 不写 |
 | 元数据风险 | 描述 = 落地正文，最敏感 | merge subject / 分支 trailer |
 
 ## 常见误区
@@ -166,9 +177,18 @@ Reviewer: <harness>:<model>
 - **“同账号多 agent 等于独立审批”**：GitHub 只看到一个人；独立性在 runtime/模型层，不是平台身份。
 - **“pr-meta 能保证描述不变”**：不能；body 编辑不换 SHA，check 可能 stale。
 
+- **“Reviewer / Reviewed-by 写 Pi:glm-5.3 就行，表里没有也没关系”**
+  未登记键不合规。先按 ADR-0011 在 AGENTS 表登记（`Pi` + `glm-5.3`），再写；`glm-5.3` 与 `glm-5.3-flash` 不能混用。
+
+- **“PR 评审写进 commit 更持久”**
+  PR 评审发生在提交之后，写进旧 commit 需要 amend / 改写；merge commit 也带不了。**正确姿势**：PR 评审用状态评论的角色行；只有提交前的文件级互审才写 `Reviewed-by`。
+
+- **“提交后补个 Reviewed-by 也一样”**
+  `Reviewed-by` 的语义是“提交前审完整个待提交内容”；提交后再审应交给下一个 commit / PR，不要回头改旧 commit。缺失 `Reviewed-by` 也不判违规。
+
 ## 延伸
 
-- 规则原文：`AGENTS.md`「评审协议」子节；`docs/guides/git-workflow.md` 第 4 步。
+- 规则原文：`AGENTS.md`「评审协议」+「commit 级评审署名」子节；`docs/guides/git-workflow.md` 第 4 步。
 - 修复与撤回：`merge-integrity` proposal（评审中；快照合并、P2a/P2b、撤回窗口、ADR-0010）。
 - CI 门禁：`docs/guides/ci-gate.md`（pr-meta/C6 的位置与结果矩阵）。
-- 来源：ADR-0004（署名）、ADR-0005（squash）、ADR-0007（授权）、ADR-0009（CI 门禁）、ADR-0010（历史修复与 docs 分支）。
+- 来源：ADR-0004（署名）、ADR-0005（squash）、ADR-0007（授权）、ADR-0009（CI 门禁）、ADR-0010（历史修复与 docs 分支）、ADR-0011（评审署名与 pr-meta 边界）。

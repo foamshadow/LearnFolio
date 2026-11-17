@@ -206,22 +206,36 @@ harness 键（闭合登记；新值 = 本表加一行 + PR）：
 | `DSH` | DeepSeek Harness |
 | `ClaudeCode` | Claude Code |
 | `ZCode` | ZCode（GLM） |
+| `Pi` | Pi |
 
 model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自行附加日期——commit date 已在提交里）：
 
 | 键 | 官方全称 |
 | --- | --- |
 | `deepseek-v4.1-flash-1017` | DeepSeek-V4.1-Flash-1017 |
+| `glm-5.3` | GLM-5.3 |
 | `glm-5.3-flash` | GLM-5.3-Flash |
+
+### commit 级评审署名（`Reviewed-by`，opt-in）
+
+- **时点**：重要 commit 在**提交前**由另一评审者（agent 或人类）审完整个待提交内容，commit 生成时在 trailer 块写 `Reviewed-by: <harness>:<model>`；提交后才发生的审查不回头改旧 commit，交给下一个 commit 或 PR。
+- **范围**：`Reviewed-by` 表示整个 commit 的待提交内容都被该 reviewer 审过；只审部分文件不写，未覆盖部分留到下一个 commit / PR。
+- **opt-in**：不强制要求存在；缺失不判违规，也不代表未评审。CI 只校验格式（若出现），不校验存在性。
+- **互审**：reviewer 必须与同一 commit 的所有 `Assisted-by` 参与者不同（互审不是自审）；人类评审的 `none` 是角色标记，不参与身份比较；多个 reviewer 不重复。
+- **重写**：内容变更（amend 改树 / 冲突 rebase / fixup）使 `Reviewed-by` 失效，须重审；tree 不变（message-only / 无冲突 rebase）可保留。
+- **位置**：trailer 块，建议 `Assisted-by` 在前、`Reviewed-by` 在后；一个 reviewer 一行，行序 = 评审顺序，不表达权重；merge commit 不写。
+- **正则**：`^Reviewed-by: (none|[A-Za-z][A-Za-z0-9]*:[a-z0-9][a-z0-9.-]*)$`；人类评审写 `none`，多人时具体人名以 PR 评论 / journal 为准。
 
 ### 评审协议（review）
 
 - 状态机：`REVIEW: BLOCKED`（评审者）→ `REVIEW-FIX`（作者）→ `REVIEW: PASS`（评审者）；一条评论承载一个状态，不在评论区聊天；ID 用 `B` / `N` / `Q`，阻塞项必须带证据；两轮上限，第二轮仍 BLOCKED 则拆 PR、缩范围或升级给人决策。
 - `REVIEW: PASS` 是评审结论，不是 GitHub approval；同账号自审路径 = `COMMENTED` 评审 + `REVIEW: PASS` 评论 + 人类明确合并授权；`required_approving_review_count=0`（单人多 agent 阶段）。
-- PASS 必须带 `target <sha>`、`body-sha256: <sha256(title + "\n" + body)>`、末行 `Reviewer: <harness>:<model>`（键表同 `Assisted-by`，人类写 `none`）；`REVIEW-FIX` 末行写 `Author: <harness>:<model>`。
+- PASS 必须带 `target <sha>`、`body-sha256: <sha256(title + "\n" + body)>`；所有状态评论都带角色行：`REVIEW: BLOCKED` / `REVIEW: PASS` 末行 `Reviewer: <harness>:<model>`，`REVIEW-FIX` 末行 `Author: <harness>:<model>`（键表同 `Assisted-by`，人类写 `none`）。这是协议软要求：CI 不校验评论，缺失不阻断合并，但留下状态无主的缺口。
 - PASS 后 PR 标题/描述冻结：任何编辑作废 PASS，必须重新 PASS 并重新快照；PR 描述只放最终变更，末行 `Assisted-by` trailer 之后不得有内容。
 - docs：squash，合并用 PASS 快照生成正文；code：`--no-ff`，merge commit 正文为空，分支提交 trailer 由 attribution 校验。
 - 人类授权后 agent 可执行合并（跑脚本）；未授权不得 merge。评审状态只在评论，PR 描述不写评审过程。
+- PR 级评审只在评论层；commit 级提交前互审走 `Reviewed-by`（见「commit 级评审署名」）；两者记录不同事件，不互相替代。不把评审状态写进 PR 描述（`pr-meta` 拒绝 `REVIEW` / `Reviewer` / `Author` / `Reviewed-by` 行）。键表闭合——未登记 runtime 先走登记 PR；`glm-5.3` 与 `glm-5.3-flash` 是两个键。
+- 历史 PASS 缺口（#27 / #28 / #29 缺席或署名与事实不符）与历史 commit 级评审均不回填；journal 记录，规则向前生效（ADR-0011）。
 - docs 单意图、提交数不限（ADR-0010）。
 
 ## 验证命令（agent 自证完成的唯一方式；未跑通不得声称完成）

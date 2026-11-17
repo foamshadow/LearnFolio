@@ -3,7 +3,7 @@ title: "评审署名缺口：Pi:glm-5.3、评论层 Reviewer 与新 ADR 准备"
 date: 2026-11-17
 author: foamshadow
 tags: [se-arch, tool-git, tool-ci]
-related: [ADR-0004, ADR-0009]
+related: [ADR-0004, ADR-0009, ADR-0011]
 ---
 
 # 评审署名缺口
@@ -20,7 +20,7 @@ related: [ADR-0004, ADR-0009]
 - model 表只有 `glm-5.3-flash`，没有 `glm-5.3`；两者是不同模型，不能混用；
 - 当前规则只在评审评论写 `Reviewer: <harness>:<model>`，commit 只有 `Assisted-by`
   （作者/参与者），**没有 commit 层的 reviewer 署名**；
-- 过去 #27 / #28 / #29 的 PASS 评论**缺席**（评审在会话内完成、未落 PR 评论）；评审协议 #28 刚毕业即连续三个 PR 未按状态机运行；决定不补历史。
+- 过去 #27 / #28 / #29 的 PASS 评论**缺席或署名与事实不符**（评审主要在会话内完成、未按状态机落评论）；评审协议 #28 刚毕业即连续三个 PR 未按状态机运行；决定不补历史。
 
 ## 决策
 
@@ -34,8 +34,16 @@ related: [ADR-0004, ADR-0009]
    - 历史 PASS 是否补、补到什么程度。
 5. 在该 ADR 落地前，`Reviewer:` 只写已登记键；未登记的 runtime 不写入正式规则。
 
+> 修正（同日）：原决策 1 的“不新增 commit 级 review 署名”不成立——重要 commit 有提交前文件级互审；`Reviewed-by` 见 ADR-0011。
+
+## 后续（同日，含修正）
+
+ADR-0011 落地：登记 `Pi` / `glm-5.3`（与 `glm-5.3-flash` 区分）；状态评论角色行（BLOCKED/PASS `Reviewer`；REVIEW-FIX `Author`）补齐；#27–#29 的 PR 级缺口不回填；`pr-meta` 扩为拒绝评审状态行与 `Reviewed-by:` 行；C6 部分取代 ADR-0009。
+
+**修正**：用户指出重要 commit 存在**提交前**的文件级互审，并非只有 PR 级。原决策 1 的“不新增 commit 级 review 署名”作废；ADR-0011 改为双轨，commit 级用 `Reviewed-by`（opt-in，提交前审完整个待提交内容；提交后再审走下一个 commit / PR）。原“只在 journal 记录、不改表”由 ADR-0011 取代。
+
 ## 关联
 
 - `docs/proposals/merge-integrity.md`（当前 review）
 - PR #27（C6）、#28（评审协议毕业）、#29（ADR-0010）
-- ADR-0004（署名）、ADR-0009（CI 门禁）
+- ADR-0004（署名）、ADR-0009（CI 门禁）、ADR-0011（评审署名与 pr-meta 边界）
