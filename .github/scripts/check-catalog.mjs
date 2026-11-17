@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// 根 package.json 暂豁免；t3 随 lefthook 纳入（终态 PR 描述已记）
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 

@@ -9,12 +9,12 @@ tasks:
   ci:
     desc: 本地 CI 等价物
     cmds:
+      - task: check:catalog
       - task: ci:web
 
   ci:web:
-    desc: Web 端 catalog / lint / format / typecheck / build
+    desc: Web 端 lint / format / typecheck / build
     cmds:
-      - task: check:catalog
       - pnpm --filter @learnfolio/web lint
       - pnpm --filter @learnfolio/web format:check
       - pnpm --filter @learnfolio/web typecheck
