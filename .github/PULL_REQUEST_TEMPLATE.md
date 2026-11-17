@@ -11,6 +11,7 @@
 <!--
 自检（提交前删掉本段注释）：
 - 标题 = 落地主题；docs 单意图（提交数不限，ADR-0010）；描述只含最终变更，无评审记录/试错
+- 状态评论带角色行（BLOCKED/PASS: Reviewer；REVIEW-FIX: Author）；提交前互审的 commit 写 Reviewed-by；描述不写评审状态行（含 Reviewed-by）
 - 描述末行是 Assisted-by trailer，其后无内容；PASS 评论含 target / body-sha256 / Reviewer
 - docs 用 PASS 快照合并；code 走 --no-ff；不要手改 merge message
 -->

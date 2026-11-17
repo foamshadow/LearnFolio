@@ -155,7 +155,7 @@ Reviewer: <harness>:<model>
 - PASS 后 PR 标题/描述**冻结**；任何编辑都作废 PASS，必须重新 PASS 并重新快照。
 - docs：合并用 PASS 快照生成 squash 正文，不读实时描述。code：merge commit 正文为空；快照只冻结 title / 描述，分支提交 trailer 由 attribution 校验。
 - 手动合并 = 绕过快照：必须逐项确认标题、描述末行 trailer、body hash、CI、方向、合并方式；合并后立刻检查落地提交。
-- `pr-meta`（C6）是 PR 时的 body backstop：查末行 trailer、拒绝评审状态行（`REVIEW` / `Reviewer` / `Author` / `Reviewed-by` 开头）；它**不校验**评论层 Reviewer 或 commit 的 `Reviewed-by`（事件 payload 不含评论；commit 由 attribution 校验），也**不能**保证 PASS 之后描述没变，硬保证仍是快照合并。
+- `pr-meta`（C6）是 PR 时的 body backstop：查末行 trailer、拒绝评审状态行（`REVIEW` / `REVIEW-FIX` 后跟分隔符或行尾；`Reviewer` / `Author` / `Reviewed-by` 后跟冒号）；它**不校验**评论层 Reviewer 或 commit 的 `Reviewed-by`（事件 payload 不含评论；commit 由 attribution 校验），也**不能**保证 PASS 之后描述没变，硬保证仍是快照合并。
 
 ## docs 与 code 的落地物
 
