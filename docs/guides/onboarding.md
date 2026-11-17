@@ -3,7 +3,7 @@ title: "本地环境上手：从 clone 到 task ci"
 author: foamshadow
 date: 2026-11-17
 status: draft
-tags: [tool-node, tool-git, se-arch]
+tags: [tool-node, tool-go, tool-git, se-arch]
 related: [SPEC-0001, ADR-0007]
 ---
 
@@ -11,27 +11,30 @@ related: [SPEC-0001, ADR-0007]
 
 ## 讲给谁 / 前置知识
 
-给第一次 clone 仓库、要把 `apps/web` 跑起来的成员（人类或 agent）。前置只需要会三件事：`git clone`、`git commit`、`git push`，以及使用终端。不需要先懂 Nuxt、pnpm workspace 或 Task——本文会把每个工具第一次出现时的作用讲清楚。
+给第一次 clone 仓库、要把 `apps/web` 与 `apps/api` 跑起来的成员（人类或 agent）。前置只需要会三件事：`git clone`、`git commit`、`git push`，以及使用终端。不需要先懂 Nuxt、pnpm workspace、Go 或 Task——本文会把每个工具第一次出现时的作用讲清楚。
 
-这是 t1 的首段，只覆盖 **Node 侧**（`apps/web` 与 workspace 根）；Go（t2）与 Docker（t6）的段落后续补入。规则真源仍是 `AGENTS.md` 与 `SPEC-0001`，本文只解释怎么把环境搭起来，不新增规则。
+本文覆盖 **Node + Go 侧**（`apps/web`、`apps/api` 与 workspace 根）；Docker（t6）段落后续补入。规则真源仍是 `AGENTS.md` 与 `SPEC-0001`，本文只解释怎么把环境搭起来，不新增规则。
 
 ## 核心图景
 
-本地环境由四层组成，每层只认一个版本真源：
+本地环境由六层组成，每层只认一个版本真源：
 
 | 层 | 真源 | 谁消费 |
 | --- | --- | --- |
 | Node | `.nvmrc`（`24.20.0`） | 本机 `fnm`；CI 的 `setup-node` |
 | pnpm | 根 `package.json` 的 `packageManager`（`pnpm@12.19.0`） | 本机 corepack；CI 的 `pnpm/action-setup` |
-| 依赖版本 | `pnpm-workspace.yaml` 的 `catalog:` | `pnpm install` |
+| npm 依赖版本 | `pnpm-workspace.yaml` 的 `catalog:` | `pnpm install` |
+| Go | `apps/api/go.mod` 的 `go` 指令（`1.27.4`） | 本机 `go`；CI 的 `setup-go` |
+| Go 工具 | `Taskfile.yml` 的 `GOLANGCI_LINT_VERSION`（`v2.15.0`） | `task setup:go`；CI 的同一命令 |
 | 命令 | 根 `Taskfile.yml` | 本地 `task`；CI 的 `task` |
 
-搭好之后，日常只记四条命令：
+搭好之后，日常只记五条命令：
 
 ```text
 fnm use --install-if-missing     # 切到 .nvmrc 指定的 Node
-task setup                       # pnpm install + nuxt prepare
+task setup                       # setup:node + setup:go（第一次 / 依赖变更后）
 task dev:web                     # 起 Nuxt（默认 http://localhost:3000）
+task dev:api                     # 起 Go API（默认 http://localhost:8080）
 task ci                          # 提交前的本地 CI 等价物
 ```
 
@@ -43,9 +46,13 @@ fnm（读 .nvmrc）
        └─ corepack（读 packageManager）
             └─ pnpm 12.19.0
                  └─ task setup
-                      ├─ pnpm install（按 catalog 解析版本）
-                      └─ apps/web postinstall: nuxt prepare（生成 .nuxt 类型）
-                           └─ task dev:web / task ci
+                      ├─ setup:node
+                      │    └─ pnpm install（按 catalog 解析版本）
+                      │         └─ apps/web postinstall: nuxt prepare
+                      └─ setup:go
+                           ├─ go mod download（apps/api）
+                           └─ go install golangci-lint@v2.15.0
+                                └─ task dev:web / dev:api / gen / ci
 ```
 
 ## 第一天上手
@@ -107,7 +114,7 @@ npm install -g pnpm@12.19.0
 
 ### 3. 安装 Task
 
-Task（go-task）是跨语言任务运行器。仓库根只有一份 `Taskfile.yml`，Node、未来的 Go 与 Docker 命令都从它进入。
+Task（go-task）是跨语言任务运行器。仓库根只有一份 `Taskfile.yml`，Node、Go 与未来的 Docker 命令都从它进入。
 
 ```bash
 # macOS
@@ -138,21 +145,70 @@ cd LearnFolio
 cp .env.example .env
 ```
 
-当前只有 `NUXT_PUBLIC_API_BASE`（默认 `http://localhost:8080`）。没有 `.env` 也能启动，Nuxt 会走 `nuxt.config.ts` 里的硬编码缺省；需要指向别的 API 时再建。
+当前有两个变量：
+
+- `NUXT_PUBLIC_API_BASE`：Web 请求的 API 地址，默认 `http://localhost:8080`；
+- `PORT`：API 监听端口，默认 `8080`。
+
+没有 `.env` 也能启动：Nuxt 走 `nuxt.config.ts` 的硬编码缺省，Go 走代码里的 `8080` 缺省。需要改端口或指向别的 API 时再建。
 
 `.env` 已 gitignore，不要提交；`.env.example` 才是入库模板。
 
-### 5. 安装依赖
+### 5. 安装 Go
+
+Go 侧只碰 `apps/api`；仓库根的 `go.mod` 不存在，所以不要指望在根目录跑 `go build`。
+
+```bash
+# macOS
+brew install go
+
+# Arch Linux
+sudo pacman -S go
+
+# Windows（PowerShell）
+winget install GoLang.Go
+
+# 其他系统：按 https://go.dev/dl/ 安装
+go version   # 应不低于 go1.27.4
+```
+
+`apps/api/go.mod` 的 `go 1.27.4` 是最低版本；`GOTOOLCHAIN=auto`（Go 1.21+ 默认）会在本机版本不够时自动下载对应工具链。团队以 1.27.4 为基线，CI 用 `setup-go` 读同一个 `go.mod`。
+
+**把 `GOPATH/bin` 加进 PATH**。`task setup:go` 会把 `golangci-lint` 装到 `$(go env GOPATH)/bin`，这个目录默认不在 PATH 上；不加，`task ci` 会报 `golangci-lint: command not found`。
+
+```bash
+# bash / zsh：写进 ~/.bashrc 或 ~/.zshrc
+export PATH="$(go env GOPATH)/bin:$PATH"
+```
+
+```powershell
+# PowerShell：写进 $PROFILE
+$env:Path = "$(go env GOPATH)\bin;$env:Path"
+```
+
+验证：
+
+```bash
+go env GOPATH
+echo "$PATH" | tr ':' '\n' | grep "$(go env GOPATH)/bin"
+```
+
+### 6. 安装依赖与工具
 
 ```bash
 task setup
 ```
 
-它执行 `pnpm install`，由 workspace 根安装 `apps/*` 与 `packages/*` 的依赖；`apps/web` 的 `postinstall` 会跑 `nuxt prepare`，生成 `.nuxt/` 下的类型与 ESLint 配置。第一次会下载依赖，之后通常很快。
+`task setup` 是聚合任务，按顺序执行：
 
-如果这一步报 Node 或 pnpm 版本不对，先回到第 1、2 步；不要用“先把依赖装上再说”绕过。
+1. `setup:node`：`pnpm install`，由 workspace 根安装 `apps/*` 与 `packages/*` 的依赖；`apps/web` 的 `postinstall` 会跑 `nuxt prepare`，生成 `.nuxt/` 下的类型与 ESLint 配置；
+2. `setup:go`：在 `apps/api` 下 `go mod download`，再 `go install` 固定版本 `golangci-lint`（版本来自 `Taskfile.yml` 的 `GOLANGCI_LINT_VERSION`）。
 
-### 6. 起开发服务器
+第一次会下载依赖，之后通常很快。如果只做 Web，可以用 `task setup:node` 跳过 Go 工具；如果只改 API，可以用 `task setup:go`。但 A10 的“clone 后一条命令就绪”主路径是 `task setup`。
+
+如果这一步报 Node / pnpm / Go 版本不对，先回到前面的安装步骤；不要用“先把依赖装上再说”绕过。
+
+### 7. 起 Web 开发服务器
 
 ```bash
 task dev:web
@@ -162,7 +218,39 @@ task dev:web
 
 `task dev:web` 会用 Task 的 `dotenv` 读根 `.env`，再启动 Nuxt；Nuxt 自己只读 `apps/web/.env`，所以根 `.env` 必须由 Task 注入。没有 `.env` 时 Task 静默跳过，页面显示默认的 `http://localhost:8080`。
 
-### 7. 提交前跑 CI 等价物
+### 8. 起 API 开发服务器与生成契约
+
+```bash
+task dev:api
+```
+
+它会在 `apps/api` 下启动 `go run ./cmd/api`，并用 `dotenv` 读根 `.env`（任务目录是 `apps/api`，所以 Taskfile 里写的是 `../../.env`）。默认监听 `:8080`；在 `.env` 里改 `PORT` 即可换端口。
+
+```bash
+curl http://localhost:8080/healthz
+# {"status":"ok"}
+```
+
+`/healthz` 是 liveness 探针，只表示进程可服务，不检查数据库；readiness 等有依赖后再加。
+
+契约生成：
+
+```bash
+task gen        # 重新生成 apps/api/docs/openapi.yaml
+task gen:check  # 重新生成后 git diff --exit-code，校验无漂移
+```
+
+改了 handler / DTO 后先 `task gen`，把 Go 源码和 `apps/api/docs/openapi.yaml` 一起提交。**不要手改生成物**；`gen:check` 会在 CI 里抓漂移。也不要从仓库根跑 `go run ./cmd/api openapi`——根目录没有 `go.mod`；用 `task gen`，它已经设好 `dir: apps/api`。
+
+只查 API：
+
+```bash
+task ci:api
+```
+
+它执行 `go build ./...`、`go test ./...`、`golangci-lint run ./...`、`task gen:check`。
+
+### 9. 提交前跑 CI 等价物
 
 ```bash
 task ci
@@ -174,9 +262,13 @@ task ci
 2. `pnpm --filter @learnfolio/web lint`；
 3. `pnpm --filter @learnfolio/web format:check`（Prettier）；
 4. `pnpm --filter @learnfolio/web typecheck`（`nuxt typecheck` + `vue-tsc`）；
-5. `pnpm --filter @learnfolio/web build`。
+5. `pnpm --filter @learnfolio/web build`；
+6. `cd apps/api && go build ./...`；
+7. `cd apps/api && go test ./...`；
+8. `cd apps/api && golangci-lint run ./...`；
+9. `task gen:check`。
 
-全绿再 push。CI 的 web job 调的是同一组 Task 命令：`task check:catalog` + `task ci:web`，不是另一套手写清单。
+全绿再 push。CI 的 web job 调 `task check:catalog` + `task ci:web`；api job 调 `task setup:go` + `task ci:api`，不是另一套手写清单。
 
 commit / push 的授权模型见 `AGENTS.md`「破坏性操作」与 [ADR-0007](../adr/0007-collaboration-authorization.md)；能跑通不等于能直接推。
 
@@ -186,44 +278,61 @@ commit / push 的授权模型见 `AGENTS.md`「破坏性操作」与 [ADR-0007](
 task format
 ```
 
-它只对 `apps/web` 跑 Prettier；编辑器保存时也会先走 Prettier，再由 ESLint 修可自动修复的规则。
+它只对 `apps/web` 跑 Prettier；编辑器保存时也会先走 Prettier，再由 ESLint 修可自动修复的规则。Go 侧用 `gofmt`；`golangci-lint` 的 formatter 配置暂未启用，提交前至少跑 `gofmt -w`。
 
 ### 常用命令速查
 
 | 场景 | 命令 |
 | --- | --- |
 | 第一次、依赖变更后 | `task setup` |
-| 日常开发 | `task dev:web` |
+| 只装 Node 依赖 | `task setup:node` |
+| 只装 Go 工具 | `task setup:go` |
+| Web 日常开发 | `task dev:web` |
+| API 日常开发 | `task dev:api` |
 | 提交前 | `task ci` |
-| 格式化 | `task format` |
+| 只跑 API 检查 | `task ci:api` |
+| 生成契约 | `task gen` |
+| 校验契约无漂移 | `task gen:check` |
+| 格式化 Web | `task format` |
 | 只查依赖是否走 catalog | `task check:catalog` |
 
 ### Windows 备注
 
 - 用 PowerShell 时，复制文件是 `Copy-Item .env.example .env`，不是 `cp`。
-- `corepack enable` 可能需要管理员权限；`winget install Task.Task` 不需要。
+- `corepack enable` 可能需要管理员权限；`winget install Task.Task` / `winget install GoLang.Go` 不需要。
 - 仓库的 `.gitattributes` 已把文本行尾锁为 LF；不要把编辑器全局的 CRLF 设置带进来。
 - `fnm` 的 shell hook 写进 PowerShell `$PROFILE`，否则新终端不会自动切 Node。
+- Go 的 `GOPATH\bin` 也要写进 `$PROFILE` 的 PATH，否则 `task ci` 找不到 `golangci-lint`。
+- 不要用 PowerShell 的 `>` 重定向 `go run ./cmd/api openapi`：`>` 会按字符串重编出 UTF-16，毁掉 `gen:check` 的字节一致性。用 `task gen` 或 `--output`。
 
 ## 为什么这样设计
 
 ### 版本只留一个真源
 
-Node 由 `.nvmrc` 管，pnpm 由 `packageManager` 管，npm 依赖由 `catalog:` 管。三处各管一层，升级时只改一处：
+Node 由 `.nvmrc` 管，pnpm 由 `packageManager` 管，npm 依赖由 `catalog:` 管，Go 由 `apps/api/go.mod` 的 `go` 指令管，Go lint 工具由 `Taskfile.yml` 的 `GOLANGCI_LINT_VERSION` 管。各管一层，升级时只改一处：
 
 - `.nvmrc` 同时被本地 `fnm` 和 CI 的 `setup-node` 读取；
 - `packageManager` 同时被 corepack 和 `pnpm/action-setup` 读取；
-- `catalog:` 的版本写在 `pnpm-workspace.yaml`，app 的 `package.json` 只写 `"catalog:"`。
+- `catalog:` 的版本写在 `pnpm-workspace.yaml`，app 的 `package.json` 只写 `"catalog:"`；
+- `apps/api/go.mod` 同时被本地 `go` 和 CI 的 `setup-go` 读取；
+- `GOLANGCI_LINT_VERSION` 同时被 `task setup:go` 和 CI 的同一命令消费。
 
 根 `package.json` 的 `engines` 是**声明**，不是强制闸门：pnpm 默认只警告不阻断。真正的 Node 一致性由 `.nvmrc`（本地流程）和 CI 的 `node-version-file`（硬门禁）承担。不要把 `engines` 当成“已经强制”。
 
 ### 为什么用 Task，而不是根 npm scripts
 
-`task setup` / `task ci` 是跨语言的入口。t2 会加 `task gen` / `task gen:check`，t6 会加 `task db:up`；这些命令不属于某一个 npm package，也不该塞进根 `package.json`。CI 调 `task ci:web`，本地也调它，命令清单只有一份。
+`task setup` / `task ci` / `task gen` 是跨语言的入口。t2 加了 `gen` / `gen:check` / `dev:api`，t6 会加 `db:up`；这些命令不属于某一个 npm package，也不该塞进根 `package.json`。CI 调 `task ci:web` / `task ci:api`，本地也调它们，命令清单只有一份。
+
+`task setup` 聚合 Node 与 Go 两个子任务，是 A10 的“一条命令搭环境”入口；`setup:node` 保留给纯 Web 场景，但不会安装 Go 工具，所以不能替代完整 A10 路径。
 
 ### 为什么根 `.env` 要经过 Task
 
-Nuxt 在 `apps/web` 下启动，默认只读 `apps/web/.env`。团队约定环境文件在仓库根，Task 在启动子进程前用 `dotenv` 把根 `.env` 注入环境变量，Nuxt 的 `runtimeConfig.public.apiBase` 就能通过 `NUXT_PUBLIC_API_BASE` 覆盖缺省值。这样不会在 app 目录里复制第二份 `.env`，也不会让密钥散落。
+Nuxt 在 `apps/web` 下启动，默认只读 `apps/web/.env`；Go 也不会自动读 `.env`。团队约定环境文件在仓库根，Task 在启动子进程前用 `dotenv` 把根 `.env` 注入环境变量：
+
+- `task dev:web` 的 `dotenv: ['.env']` 相对 Taskfile 根；
+- `task dev:api` 的任务目录是 `apps/api`，所以写 `../../.env`。
+
+这样不会在 app 目录里复制第二份 `.env`，也不会让密钥散落。
 
 ### 为什么本地 `pnpm install`，CI 却用 `--frozen-lockfile`
 
@@ -233,9 +342,18 @@ Nuxt 在 `apps/web` 下启动，默认只读 `apps/web/.env`。团队约定环�
 
 `nuxt prepare` 生成 `.nuxt/` 里的类型和 `eslint.config.mjs` 的基座；没有它，`lint` 和 `typecheck` 会找不到生成物。它由 `apps/web` 的 `postinstall` 自动触发，所以正常路径是 `task setup` 一次，不需要手动跑。
 
+### 为什么 Go 命令必须在 `apps/api` 内
+
+Go module 根是 `apps/api`，不是仓库根；根目录没有 `go.mod`。`task gen` / `task ci:api` / `task dev:api` 都设了 `dir: apps/api`，所以从根执行 Task 也能落在正确的 module 里。这也是 `apps/web` 与 `apps/api` 工具链互不越界的具体落点。
+
 ## 常见误区
 
 - **在干净 clone 上直接 `task ci`**：会因为没有 `node_modules` 失败。顺序是 `task setup` → `task ci`。
+- **只跑 `task setup:node` 就以为环境完整**：Go 工具没装，`task ci` 会失败；完整路径用 `task setup`。
+- **Go 装了但 `GOPATH/bin` 不在 PATH**：`task setup:go` 成功，`task ci` 却报 `golangci-lint: command not found`。把 `$(go env GOPATH)/bin` 加进 PATH。
+- **在仓库根跑 `go run ./cmd/api`**：根目录没有 `go.mod`；用 `task dev:api`，或先 `cd apps/api`。
+- **手改 `apps/api/docs/openapi.yaml`**：`gen:check` 会红；改 handler / DTO 后 `task gen`。
+- **用 PowerShell `>` 生成契约**：`>` 会重编编码；用 `task gen` 的 `--output`。
 - **在仓库根跑 `pnpm dev`**：根 `package.json` 没有 `dev` script；用 `task dev:web`。
 - **Node 版本不对但继续开发**：pnpm 可能只警告；CI 会用 `.nvmrc` 的 24.20.0 跑，本地结果不可比。先 `fnm use`。
 - **把 `.env` 放在 `apps/web`**：Nuxt 会读它，但 `task dev:web` 的约定是根 `.env`；两处并存会产生“到底哪个生效”的歧义。统一放根。
@@ -246,8 +364,9 @@ Nuxt 在 `apps/web` 下启动，默认只读 `apps/web/.env`。团队约定环�
 
 ## 延伸
 
-- `AGENTS.md`：工具链边界、验证命令、提交纪律
-- [SPEC-0001](../specs/0001-phase-0-scaffold.md)：t1 / A1 / A2 / A4 的验收原文
+- `AGENTS.md`：工具链边界、Go 分层纪律、契约与生成物、验证命令
+- [SPEC-0001](../specs/0001-phase-0-scaffold.md)：t1 / t2、A1 / A3 / A4 的验收原文
 - [Git 流程讲解](git-workflow.md)：分支、合并、提交消息
-- `Taskfile.yml` / `pnpm-workspace.yaml` / `.nvmrc` / `package.json`：本文提到的四个真源
+- `Taskfile.yml` / `pnpm-workspace.yaml` / `.nvmrc` / `package.json` / `apps/api/go.mod` / `apps/api/.golangci.yml`：本文提到的版本与配置真源
 - [Task 官方文档](https://taskfile.dev/)
+- [Huma 文档](https://huma.rocks/)

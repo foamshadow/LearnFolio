@@ -3,9 +3,8 @@
 本文件是 LearnFolio 仓库的规范唯一真源，对所有成员（人类与 AI agent）生效，无豁免权。
 修改本文件必须走 PR（见"规范变更"）。
 
-> 渐进补入：本初版只含建仓即生效的规则。后续节随任务 PR 到达——
-> t2 补"Go 分层纪律 / 契约与生成物 / 工具版本"、t3 补提交纪律的 lefthook 配置行
-> （路线见 SPEC-0001 任务分解的随带交付列）。
+> 渐进补入：本初版只含建仓即生效的规则。t2 已补"Go 分层纪律 / 契约与生成物 / 工具版本"；
+> t3 补提交纪律的 lefthook 配置行（路线见 SPEC-0001 任务分解的随带交付列）。
 
 ## 仓库身份
 
@@ -252,6 +251,31 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
 - 生成物报错时禁止改生成物：回源头（Go struct / ent schema）改，再 task gen
 - 禁止跨 app import：apps/web 不引用 apps/api 的任何文件，唯一通道是生成的 schema.ts
 - 新增 Node 依赖一律走 pnpm-workspace.yaml 的 catalog:，不在 app 的 package.json 写死版本
+
+## Go 分层纪律
+
+- 依赖单向：handler → service → repository；repository 是唯一碰 DB 的层
+- internal/handler 放 HTTP 层与 request/response DTO（可带 huma 注解）
+- internal/model 放领域/持久化实体：零 huma 注解，永不出现在 OpenAPI spec
+- ent 生成代码入库（Phase 2 起）：apps/api/ent/ 提交，仅 ent/schema/ 是手写源（clone 即 build；查询必须对照生成的强类型 API 写）
+- 预定目录 config/ store/ httpx/ telemetry/ 随首个代码出现，禁止提前建空目录
+- 第二个 cmd/* 二进制出现当天，wire() 组装从 main.go 提入 internal/app/
+
+## 契约与生成物
+
+- 生成物不手改：apps/web/shared/api/schema.ts、ent 生成代码、apps/api/docs/openapi.yaml 一律改源头后重新生成
+- 契约产物显式导入：schema.ts 位于 shared/api/（不进 shared/types、shared/utils 自动导入目录），引用一律 #shared/api/schema
+- task gen 必须串行（Taskfile 用 cmds: 链式，不用并行执行的 deps:）；migrate:diff 独立任务（需 Docker），不进 gen:check
+- openapi 子命令自带写盘（--output，内部临时文件成功后原子替换），禁止 stdout 重定向：shell 管道参与编码，Windows PowerShell 的 `>` 按字符串重编出 UTF-16，gen:check 字节一致性即毁
+- 换行纪律：.gitattributes 锁 eol=lf——git 不读 .editorconfig，换行漂移会让 gen:check 永久红；生成物已标 linguist-generated
+- SQL 安全（Phase 2 生效）：绕过 ORM 的 raw 查询必须占位符参数绑定；禁止 fmt.Sprintf / 拼接 / f-string 组装 SQL
+- 错误响应统一 huma 内建 RFC 9457 problem+json（huma.Error*），不手搓错误信封
+
+## 工具版本
+
+- 生成器 CLI（ent codegen / atlas）用 go.mod 的 tool 指令锁定（Go 1.24+，Phase 2 首个工具落地时启用）；禁止 CI 中 go install ...@latest
+- golangci-lint 版本单一源：Taskfile var；CI 与 task setup 共同消费同一数字（t2 的 CI 直接调 task setup:go；不进 go tool，避免污染 module graph；.golangci.yml 顶层 version 键兜底防 v1/v2 跨界）
+- Node / pnpm 版本由 packageManager 字段与 .nvmrc 锁定
 
 ## TODO 注释规范
 

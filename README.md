@@ -18,12 +18,13 @@ LearnFolio 是一个学习驱动的全栈工程实践项目：前端承载内容
 ## 状态
 
 Phase 0 进行中：t0（CI 骨架）、t4（遗产整理）、t5（.vscode 基线）、
-t1（workspace 与 Nuxt 基线）已合入 `dev`，下一步 t2（apps/api）。施工图见
+t1（workspace 与 Nuxt 基线）已合入 `dev`，t2（apps/api）已实现（PR #40），
+下一步 t3（lefthook）。施工图见
 [SPEC-0001](docs/specs/0001-phase-0-scaffold.md)，文档地图见 [docs/README.md](docs/README.md)。
 
 ## 开发环境
 
-Node 24.20.0 / pnpm 12.19.0 / Task 3.54.0；从 clone 到 `task ci` 的步骤见
+Node 24.20.0 / pnpm 12.19.0 / Task 3.54.0 / Go 1.27.4；从 clone 到 `task ci` 的步骤见
 [docs/guides/onboarding.md](docs/guides/onboarding.md)。
 
 ## 开发模型
