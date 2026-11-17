@@ -4,7 +4,7 @@ author: foamshadow
 date: 2026-11-15
 status: draft
 tags: [tool-ci]
-related: [ADR-0009, SPEC-0001]
+related: [ADR-0009, ADR-0011, SPEC-0001]
 adopted-as: ""
 ---
 
@@ -28,7 +28,7 @@ t0 落地后（PR #9），CI 的真实形态第一次可测量：PR run 与 push
 | C3 | attribution 浅取 | 每次 `fetch-depth: 0` 全史 clone；收口 PR 扫整个阶段的提交 | 提交数 > 数千，或 clone 时间 > 30 秒 | 按事件取最小范围（PR 取 base + head、push 取 before..after），取不到再回退全史 | 动 ADR-0009-D6 的 fetch-depth 条款 + 脚本；**中** | 候选 |
 | C4 | `changes.filters` 覆盖根工具链 | 改根 Taskfile / tsconfig / .npmrc 等不触发分端构建（假阴性） | t1 引入根 Taskfile 时 | filters 增根路径，分端构建随之触发 | `ci.yml`；**低** | 待 t1 |
 | C5 | 门禁文件 CODEOWNERS | `ci.yml` / 聚合脚本可在同一 PR 内被改宽 | 团队扩到非核心贡献者之前 | CODEOWNERS 指定维护者，或 AGENTS 要求门禁改动须维护者评审 | 仓库配置 / AGENTS；**低** | 候选 |
-| C6 | PR 描述元数据校验 | #22 事故：PASS 后描述追加评审清单，squash 正文 trailer 失位，dev push attribution 红；PR run 不读描述 | 已触发（#22） | `pr-meta` job：PR 描述末行 `Assisted-by` trailer、正文无 `## 评审…`；并入 `ci-ok`；push 下 skipped；不查 docs 单提交 | `ci.yml` + `aggregate.sh` + `check-pr-meta.sh`；ADR-0009 部分取代待补；**中** | 已落地（PR #27） |
+| C6 | PR 描述元数据校验 | #22 事故：PASS 后描述追加评审清单，squash 正文 trailer 失位，dev push attribution 红；PR run 不读描述 | 已触发（#22） | `pr-meta` job：PR 描述末行 `Assisted-by` trailer、正文无评审状态行（REVIEW / Reviewer / Author / Reviewed-by）；并入 `ci-ok`；push 下 skipped；不查 docs 单提交、不校验评论层 Reviewer | `ci.yml` + `aggregate.sh` + `check-pr-meta.sh`；ADR-0011 部分取代 ADR-0009；**中** | adopted（PR #27；ADR-0011） |
 
 **已接受、不修**：
 
@@ -38,7 +38,7 @@ t0 落地后（PR #9），CI 的真实形态第一次可测量：PR run 与 push
 
 ## 毕业条件
 
-- C1 / C3 / C6 毕业时须开**新 ADR 部分取代 ADR-0009** 对应决策（ADR 正文不可变），同 PR 改 `ci.yml`、聚合脚本与 SPEC-A5 验收；C2 还须先完成实测③并把结论记入 SPEC；C6 已先落地（PR #27），ADR-0009 部分取代待补；
+- C1 / C3 / C6 毕业时须开**新 ADR 部分取代 ADR-0009** 对应决策（ADR 正文不可变），同 PR 改 `ci.yml`、聚合脚本与 SPEC-A5 验收；C2 还须先完成实测③并把结论记入 SPEC；C6 已先落地（PR #27），ADR-0011 已补部分取代；
 - C4 随 t1 的 Taskfile PR 一起落地，不单独开任务；C5 视团队扩张再定；
 - 落地后本表对应行改 `adopted` 并链 PR，全部毕业或方案被推翻后整篇归档；
 - 新增候选必须带"触发指标 + 改动面"，否则不入表——没有触发条件的 backlog 等于永久 TODO。
@@ -47,3 +47,4 @@ t0 落地后（PR #9），CI 的真实形态第一次可测量：PR run 与 push
 
 - 2026-11-15 由 t0 落地后的 CI 性能盘点建立（基线：PR #9 run 与 dev push run 各 15 秒，均为 4 job 执行 / 2 job skipped）。
 - 2026-11-17 C6 落地（PR #27）：新增 `pr-meta` job，校验 PR 描述末行 trailer、正文无评审段；不查 docs 单提交（ADR-0010 已撤销）；ADR-0009 部分取代待补。
+- 2026-11-17 ADR-0011 补记：`pr-meta` 扩为拒绝评审状态行（REVIEW / Reviewer / Author / Reviewed-by）；不校验评论层 Reviewer；ADR-0011 部分取代 ADR-0009，C6 记账闭合。

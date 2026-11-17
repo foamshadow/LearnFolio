@@ -1,7 +1,7 @@
 ---
 id: ADR-0009
 title: "CI 门禁策略：单 workflow、ci-ok 聚合与双触发"
-status: accepted
+status: deprecated
 date: 2026-11-15
 author: foamshadow
 tags: [se-arch, tool-ci]

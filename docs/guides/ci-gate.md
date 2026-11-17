@@ -4,7 +4,7 @@ author: foamshadow
 date: 2026-11-15
 status: draft
 tags: [se-arch, tool-ci]
-related: [ADR-0009, SPEC-0001, ADR-0003, ADR-0004]
+related: [ADR-0009, ADR-0011, SPEC-0001, ADR-0003, ADR-0004]
 ---
 
 # CI 门禁讲解：读懂你的红绿灯
@@ -13,7 +13,9 @@ related: [ADR-0009, SPEC-0001, ADR-0003, ADR-0004]
 
 给所有要**开 PR** 的成员（人类与 agent）——只要你的改动要走 PR 进 dev / main，就绕不开本文描述的这道门。前置：读过 git-workflow.md 的地基概念（知道分支、merge、PR 是什么）；**不假设你用过 GitHub Actions**，CI 领域的全部词汇在下一节就地讲。
 
-实现本体已随 t0 入库：`.github/workflows/ci.yml`（工作流定义）+ `.github/scripts/` 三个脚本（aggregate / check-title / check-attribution）+ PR 描述模板。本文讲门禁的**结构与读法**；行为与本文不符时以实现文件为准、视为本文 bug 同 PR 修正；设计出处是 SPEC-0001-A5 与 ADR-0009（被否方案与翻转条件都在那篇）。
+实现本体已随 t0 / #27 入库：`.github/workflows/ci.yml`（工作流定义）+ `.github/scripts/` 四个脚本（aggregate / check-title / check-attribution / check-pr-meta）+ PR 描述模板。本文讲门禁的**结构与读法**；行为与本文不符时以实现文件为准、视为本文 bug 同 PR 修正；设计出处是 SPEC-0001-A5、ADR-0009 与 ADR-0011（C6 / 评审署名部分）。
+
+> 过渡注记（ADR-0011 文档先行）：本文已按 ADR-0011 描述 `Reviewed-by` / `pr-meta` 的目标行为；脚本收紧随紧随的 `fix/ci-review-attribution` PR 到达。落地前 `check-pr-meta.sh` 仍只查末行 trailer 与 `## 评审`，`check-attribution.sh` 只查 `Assisted-by`；这段落差是已计划的，不是本文 bug。
 
 ## 核心图景
 
@@ -41,9 +43,10 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
 ├─ web            Node 侧 lint/typecheck/build ├─ attribution（before..after 区间）
 ├─ api            Go 侧 build/test/lint
 ├─ title          标题六变体 + 方向矩阵
-├─ pr-meta        PR 描述末行 trailer / 无评审段
-├─ attribution    逐提交署名 trailer        （changes / title / pr-meta 跳过：
-└─ ci-ok          聚合 ← 分支保护唯一必需检查   它们依赖 PR 上下文，push 下必误报）
+├─ pr-meta        PR 描述末行 trailer / 无评审状态行
+├─ attribution    逐提交 Assisted-by / Reviewed-by
+└─ ci-ok          聚合 ← 分支保护唯一必需检查
+   （changes / title / pr-meta 跳过：它们依赖 PR 上下文，push 下必误报）
 ```
 
 一个实现细节：pull_request 事件下，Actions 实际检出的代码是 PR 的**合并预演**（`refs/pull/N/merge`——把 head 合进 base 的试合并结果），check 结果则挂在 PR head 的 SHA 上。所以"PR 绿"意味着"合并进 base 之后的样子能通过"——这就是 CI 能在合并前验证合并结果的原因；PR 页面上的文本冲突提示则来自 GitHub 自己的 mergeability 计算，与 Actions 无关。
@@ -103,19 +106,21 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
 
 两个配套细节：`edited` 事件必须显式订阅——GitHub 默认的 pull_request 触发不含"编辑 PR"，不显式加的话，开启后改标题就能逃逸校验；校验失败时错误信息自带期望样板（"期望形如：合并 spec-0001-t1 短名：一句话"），PR 模板顶部注释也有六行速查——红灯照抄改参即可，不用回文档查。
 
-### 设计五：逐提交署名校验，PR 与 push 双覆盖（D6）
+### 设计五：逐提交署名，PR 与 push 双覆盖（D6）
 
-**规定**：`attribution` job 对范围内**每个非 merge 提交**校验 `Assisted-by` trailer（存在性 + 格式正则）；PR 场景取 `base..head` 区间，push 场景取 `before..after` 区间；区间不可用时回退到全史校验（fail-closed——宁可误伤，不放过去）。
+**规定**：`attribution` job 对范围内**每个非 merge 提交**校验 `Assisted-by` trailer（存在性 + 格式正则）；若提交出现 `Reviewed-by:` 行，逐行校验格式，但**不校验存在性**（opt-in）。PR 场景取 `base..head` 区间，push 场景取 `before..after` 区间；区间不可用时回退到全史校验（fail-closed——宁可误伤，不放过去）。
+
+**为什么 `Reviewed-by` 只校格式**：它表示“这个 commit 在提交前由另一评审者（agent 或人类）审过整个待提交内容”，是可选声明；多数 commit 没有提交前互审，强制存在会逼出假声明。CI 只防键表 / 拼写漂移，不能证明 reviewer 真的审过（ADR-0011）。
 
 **为什么 push 也要查**（本地钩子 t3 落地后理论上已经拦了一道）：三层答案。其一，`git commit --no-verify` 能绕过任何本地钩子，CI 是唯一绕不过的一层；其二，squash 合入的落地提交根本不经过 PR run——它的 trailer 来自 PR 描述末尾的占位行（描述在 squash 时成为提交正文），只有 push 校验能看到它；其三，checkout 需要 `fetch-depth: 0`（完整历史）才能取到提交区间，浅克隆拿不到。跳过 merge 提交的依据不是"它由平台生成"，而是 merge 提交不注入内容、**结构上无法携带 trailer**（ADR-0004）。
 
 ### 补充：PR 描述元数据（pr-meta，C6）
 
-**规定**：`pr-meta` 只在 `pull_request` 事件运行，校验 PR 描述最后一行是合法 `Assisted-by` trailer、正文无 `## 评审…` 记录段；并入 `ci-ok`；push 下 skipped，由矩阵放行。
+**规定**：`pr-meta` 只在 `pull_request` 事件运行，校验 PR 描述最后一行是合法 `Assisted-by` trailer、正文无评审状态行（`REVIEW` / `Reviewer` / `Author` / `Reviewed-by` 开头，含 `## 评审…`）；并入 `ci-ok`；push 下 skipped，由矩阵放行。它**不校验**评论层 Reviewer 或 commit 的 `Reviewed-by`——前者不在 PR 事件 payload 中，后者由 attribution 校验（ADR-0011）。
 
 **为什么**：docs PR 的 squash 正文取自 PR 描述。PR run 校验的是分支提交，`title` 只管标题，`attribution` 只管提交——**描述是死角**。`pr-meta` 是合并前的 body backstop。
 
-**边界**：body 编辑不换 head SHA，check 之后仍可改描述，检查可能 stale；它不能替代合并时的快照。docs 单提交不查（ADR-0005 单提交拟撤销；分支可多提交，squash 后仍一个）。
+**边界**：body 编辑不换 head SHA，check 之后仍可改描述，检查可能 stale；它不能替代合并时的快照。docs 单提交不查（ADR-0005 单提交条款已撤销，ADR-0010；分支可多提交，squash 后仍一个）。
 
 ### 设计六：空分端 job 占位（D7）
 
@@ -158,7 +163,7 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
 
 按需求取用：
 
-- **要看为什么**（每个设计点的完整论证、被否方案表与翻转条件）：ADR-0009
+- **要看为什么**（每个设计点的完整论证、被否方案表与翻转条件）：ADR-0009；C6 / 评审署名部分见 ADR-0011
 - **要看实现规格**（六变体正则全文、矩阵细则、实测清单）：SPEC-0001-A5
 - **要动手改门禁前**：proposals/ci-gate-optimizations.md——C1–C5 优化候选与"已接受、不修"清单，别重提已否决项
 - **要看门禁为什么长这样**（push 兜底与 up-to-date 死锁的前因）：ADR-0003

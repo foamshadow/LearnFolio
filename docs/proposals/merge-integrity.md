@@ -4,7 +4,7 @@ author: foamshadow
 date: 2026-11-16
 status: review
 tags: [se-arch, tool-git, tool-ci]
-related: [ADR-0004, ADR-0005, ADR-0007, ADR-0009, ADR-0010, SPEC-0001]
+related: [ADR-0004, ADR-0005, ADR-0007, ADR-0009, ADR-0010, ADR-0011, SPEC-0001]
 adopted-as: ""
 ---
 
@@ -40,7 +40,8 @@ adopted-as: ""
 ### 0.1 现行依赖（事实）
 
 - **评审协议已毕业**（#28）：PASS 的 `target` / `body-sha256` / `Reviewer` / PASS 后冻结，真源是 `AGENTS.md`「评审协议」+ `docs/guides/review.md`；本 proposal 不再定义评审流程，只消费 PASS。
-- **C6 `pr-meta` 已落地**（#27）：PR 描述末行 trailer、正文无评审段；并入 `ci-ok`；不查 docs 提交数。
+- **评审署名双轨**（ADR-0011）：PR 状态评论的角色行（BLOCKED/PASS `Reviewer`；REVIEW-FIX `Author`）；commit 级提交前互审写 `Reviewed-by`（opt-in）；`Pi` / `glm-5.3` 已登记（与 `glm-5.3-flash` 区分）；#27–#29 的历史缺口不回填。
+- **C6 `pr-meta` 已落地**（#27）：PR 描述末行 trailer、正文无评审状态行（含 `Reviewed-by` 行）；并入 `ci-ok`；不查 docs 提交数、不校验评论层 Reviewer（ADR-0011）。
 - **ADR-0010 已 accepted**（#29）：message-only rewrite；docs 单提交撤销；ADR-0005 `deprecated`。
 - **未实现 / 未实测**：`scripts/merge.sh` / `retract.sh` 未写；`(#N)` 自定义 subject 未实测；ruleset vs break-glass 未定。
 
@@ -53,7 +54,7 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
 - PASS 评论按 AGENTS 模板带 `target`、`body-sha256: <sha256(title + "\n" + body)>`、末行 `Reviewer: <harness>:<model>`。
 - 合并脚本 `scripts/merge.sh <PR>`：
   1. 取 PR 当前 `title/body`；
-  2. 校验末行是 `Assisted-by` trailer、正文无评审清单段（**有意与 C6 冗余**：脚本不依赖 CI 时序，C6 只是 PR 时的 backstop）；
+  2. 校验末行是 `Assisted-by` trailer、正文无评审状态行（REVIEW / Reviewer / Author / Reviewed-by；**有意与 C6 冗余**：脚本不依赖 CI 时序，C6 只是 PR 时的 backstop）；
   3. 与 PASS 评论的 hash 比对；不一致即作废 PASS，退回重审；同时要求 PASS 评论末行有 `Reviewer:`；
   4. docs 用快照合并：`gh pr merge --squash --subject "<title> (#N)" --body-file <snapshot>`；code 用 `gh pr merge --merge --subject "<title>"`（merge commit 正文为空）。
 - 作者在 PASS 后不得编辑 title/body；编辑即作废 PASS。

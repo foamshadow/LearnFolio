@@ -96,10 +96,11 @@ ADR 按决策时间排列，单看是碎片，按阶段读是一条线。建仓�
 | 运行修正（建仓次日） | ADR-0005 双合并策略 | deprecated（部分条款） | 文档怎么落 |
 | 元决策 | ADR-0006 文档体系与规则生长 | accepted | 为什么是六类、规则怎么长 |
 | 协作与继承（建仓次日） | ADR-0007 授权模型、ADR-0008 遗产继承 | accepted | 谁能做什么、从旧项目取什么 |
-| 交付（Phase 0） | ADR-0009 CI 门禁策略 | accepted | 门禁为什么这样搭 |
+| 交付（Phase 0） | ADR-0009 CI 门禁策略 | deprecated（ADR-0011 部分取代） | 门禁为什么这样搭；C6 相关看 ADR-0011 |
 | 历史修复（Phase 0） | ADR-0010 历史修复与 docs 分支 | accepted | message-only rewrite、docs 单提交撤销 |
+| 评审署名（Phase 0） | ADR-0011 评审署名双轨与 pr-meta 边界 | accepted | 状态评论角色行、commit 级 Reviewed-by、Pi/glm-5.3 登记、C6 部分取代 |
 
-读法：先看阶段，再看单篇。`deprecated` 表示部分条款已被取代，沿 `supersedes` 找继任者（ADR-0005 只取代 ADR-0003 的合并方式条款；ADR-0010 只取代 ADR-0005 的 docs 单提交条款）。**新增 ADR 时在本表追加一行**——这张表就是决策线的入口。
+读法：先看阶段，再看单篇。`deprecated` 表示部分条款已被取代，沿 `supersedes` 找继任者（ADR-0005 只取代 ADR-0003 的合并方式条款；ADR-0010 只取代 ADR-0005 的 docs 单提交条款；ADR-0011 只取代 ADR-0009 的 C6 job 清单、push 跳过集合与结果矩阵条款，ADR-0009 按部分取代约定不挂 superseded-by）。**新增 ADR 时在本表追加一行**——这张表就是决策线的入口。
 
 ## frontmatter
 
