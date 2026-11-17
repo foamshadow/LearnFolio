@@ -1,0 +1,25 @@
+version: '3'
+
+tasks:
+  setup:
+    desc: 安装依赖并生成 Nuxt 类型
+    cmds:
+      - pnpm install
+
+  ci:
+    desc: 本地 CI 等价物
+    cmds:
+      - task: ci:web
+
+  ci:web:
+    desc: Web 端 lint / typecheck / build
+    cmds:
+      - pnpm --filter @learnfolio/web lint
+      - pnpm --filter @learnfolio/web typecheck
+      - pnpm --filter @learnfolio/web build
+
+  dev:web:
+    desc: 启动 Web 开发服务器（自动加载根 .env）
+    dotenv: ['.env']
+    cmds:
+      - pnpm --filter @learnfolio/web dev
