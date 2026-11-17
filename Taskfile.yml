@@ -12,11 +12,17 @@ tasks:
       - task: ci:web
 
   ci:web:
-    desc: Web 端 lint / typecheck / build
+    desc: Web 端 lint / format / typecheck / build
     cmds:
       - pnpm --filter @learnfolio/web lint
+      - pnpm --filter @learnfolio/web format:check
       - pnpm --filter @learnfolio/web typecheck
       - pnpm --filter @learnfolio/web build
+
+  format:
+    desc: 用 Prettier 格式化 Web 代码
+    cmds:
+      - pnpm --filter @learnfolio/web format
 
   dev:web:
     desc: 启动 Web 开发服务器（自动加载根 .env）

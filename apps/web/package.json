@@ -8,7 +8,9 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "nuxt": "catalog:",
@@ -17,6 +19,8 @@
   "devDependencies": {
     "@nuxt/eslint": "catalog:",
     "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "prettier": "catalog:",
     "typescript": "catalog:",
     "vue-tsc": "catalog:"
   }

@@ -5,6 +5,8 @@ const config = useRuntimeConfig()
 <template>
   <main>
     <h1>LearnFolio</h1>
-    <p>API base: <code>{{ config.public.apiBase }}</code></p>
+    <p>
+      API base: <code>{{ config.public.apiBase }}</code>
+    </p>
   </main>
 </template>
