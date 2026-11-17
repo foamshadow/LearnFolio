@@ -2,10 +2,12 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -15,17 +17,31 @@ import (
 )
 
 const (
-	defaultPort = 8080
-	apiVersion  = "0.1.0"
+	defaultPort        = 8080
+	apiVersion         = "0.1.0"
+	defaultOpenAPIPath = "docs/openapi.yaml"
 )
 
 func main() {
-	if err := run(); err != nil {
+	if err := run(os.Args[1:]); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run() error {
+func run(args []string) error {
+	if len(args) == 0 {
+		return runServer()
+	}
+
+	switch args[0] {
+	case "openapi":
+		return runOpenAPI(args[1:])
+	default:
+		return fmt.Errorf("unknown subcommand %q (expected: openapi)", args[0])
+	}
+}
+
+func runServer() error {
 	port, err := listenPort()
 	if err != nil {
 		return err
@@ -45,6 +61,33 @@ func run() error {
 		return nil
 	}
 	return err
+}
+
+// runOpenAPI 复用 server 的 newAPI()，只导出契约、不监听端口。
+// 子命令自带写盘，避免 shell 重定向参与编码（PowerShell 的 > 会重编 UTF-16）。
+func runOpenAPI(args []string) error {
+	fs := flag.NewFlagSet("openapi", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	output := fs.String("output", defaultOpenAPIPath, "output file path (must not be -)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() != 0 {
+		return fmt.Errorf("openapi: unexpected arguments: %v", fs.Args())
+	}
+	if *output == "" || *output == "-" {
+		return fmt.Errorf("openapi: --output must be a file path, not stdout")
+	}
+
+	_, api := newAPI()
+	data, err := api.OpenAPI().YAML()
+	if err != nil {
+		return fmt.Errorf("generate openapi: %w", err)
+	}
+	if err := writeFileAtomic(*output, data, 0o644); err != nil {
+		return fmt.Errorf("write %s: %w", *output, err)
+	}
+	return nil
 }
 
 // newAPI 构造 server 与 openapi 子命令共用的路由。
@@ -78,4 +121,42 @@ func listenPort() (int, error) {
 		return 0, fmt.Errorf("invalid PORT %q: must be an integer between 1 and 65535", raw)
 	}
 	return port, nil
+}
+
+// writeFileAtomic 在同目录写临时文件，成功后再 rename 覆盖目标。
+// 先落临时文件可避免进程中断留下半截 openapi.yaml；rename 保证读者
+// 只会看到旧文件或完整新文件。
+func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+
+	f, err := os.CreateTemp(dir, ".openapi-*.yaml")
+	if err != nil {
+		return err
+	}
+	tmp := f.Name()
+	renamed := false
+	defer func() {
+		if !renamed {
+			_ = os.Remove(tmp)
+		}
+	}()
+
+	if _, err := f.Write(data); err != nil {
+		_ = f.Close()
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+	if err := os.Chmod(tmp, perm); err != nil {
+		return err
+	}
+	if err := os.Rename(tmp, path); err != nil {
+		return err
+	}
+	renamed = true
+	return nil
 }

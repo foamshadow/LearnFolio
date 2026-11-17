@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -56,5 +59,73 @@ func TestListenPort(t *testing.T) {
 				t.Fatalf("listenPort() = %d, want %d", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestOpenAPIStable(t *testing.T) {
+	_, firstAPI := newAPI()
+	first, err := firstAPI.OpenAPI().YAML()
+	if err != nil {
+		t.Fatalf("first YAML: %v", err)
+	}
+
+	_, secondAPI := newAPI()
+	second, err := secondAPI.OpenAPI().YAML()
+	if err != nil {
+		t.Fatalf("second YAML: %v", err)
+	}
+
+	if !bytes.Equal(first, second) {
+		t.Fatal("openapi YAML differs between two runs")
+	}
+	if !bytes.Contains(first, []byte("/healthz")) {
+		t.Fatal("openapi YAML does not contain /healthz")
+	}
+}
+
+func TestRunOpenAPIWritesFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "nested", "openapi.yaml")
+
+	if err := runOpenAPI([]string{"--output", path}); err != nil {
+		t.Fatalf("first runOpenAPI: %v", err)
+	}
+	first, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read first output: %v", err)
+	}
+	if len(first) == 0 {
+		t.Fatal("first output is empty")
+	}
+
+	if err := runOpenAPI([]string{"--output", path}); err != nil {
+		t.Fatalf("second runOpenAPI: %v", err)
+	}
+	second, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read second output: %v", err)
+	}
+	if !bytes.Equal(first, second) {
+		t.Fatal("openapi output differs between two runs")
+	}
+
+	tempFiles, err := filepath.Glob(filepath.Join(dir, "nested", ".openapi-*"))
+	if err != nil {
+		t.Fatalf("glob temp files: %v", err)
+	}
+	if len(tempFiles) != 0 {
+		t.Fatalf("leftover temp files: %v", tempFiles)
+	}
+}
+
+func TestRunOpenAPIRejectsStdout(t *testing.T) {
+	if err := runOpenAPI([]string{"--output", "-"}); err == nil {
+		t.Fatal("runOpenAPI accepted stdout output")
+	}
+}
+
+func TestRunRejectsUnknownSubcommand(t *testing.T) {
+	if err := run([]string{"unknown"}); err == nil {
+		t.Fatal("run accepted unknown subcommand")
 	}
 }
