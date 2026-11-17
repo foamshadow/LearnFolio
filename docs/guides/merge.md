@@ -71,11 +71,14 @@ PASS 之后、合并之前的窗口里，PR 描述被追加了评审清单，位
 3. 导出 PR 标题与描述，本地计算 `sha256(title + "\n" + body)`，与 PASS 里的值比对；
 4. 不一致 = PASS 已失效（描述被改过），**不合并**，退回重审拿新 PASS；
 5. 一致后执行合并——
-   - docs：把描述存成文件，`gh pr merge <N> --squash --subject "<标题> (#N)" --body-file <快照文件>`；
-   - code：`gh pr merge <N> --merge`，**不传** `--subject` / `--body`，让仓库设置"Default to PR title、正文留空"生效。注意：这与 proposal §1 的脚本命令（显式 `--subject "<标题>"`）**有意不同**，且 ` (#N)` 实测（#33）后差异变得实质——显式 subject 被平台逐字落地、**不追加** ` (#N)`，proposal §1 的 code 命令照抄会丢 ` (#N)`；默认标题路径则由 settings 追加（AGENTS 注 2026-11-14 实测）。merge.sh 定稿（proposal 毕业）时按本路径反向统一 proposal §1；
+   - docs：把描述存成文件，`gh pr merge <N> --squash --subject "<标题> (#N)" --body-file <快照文件> --match-head-commit <target>`；
+   - code：`gh pr merge <N> --merge --match-head-commit <target>`，**不传** `--subject` / `--body`，让仓库设置"Default to PR title、正文留空"生效。默认标题路径由 settings 追加 ` (#N)`（AGENTS 注 2026-11-14 实测；#36 于 2026-11-17 再次实证）。显式 `--subject` 被平台逐字落地、**不追加** ` (#N)`——#34 的事故即照抄旧 proposal §1 命令所致；proposal §1 已同步为默认标题路径；
+   - 两条命令都带 `--match-head-commit <target>`：PASS 的 target 钉进合并动作，PASS 后 head 变动会被拒绝；
 6. 合并后立刻核对落地提交：`git fetch origin && git log -1 --format="%s%n%b" origin/dev`——subject 与正文逐字对快照。
 
 第 5 步 docs 命令的 ` (#N)` 后缀行为已实测结案（proposal 开放问题 3，2026-11-17 #33 首用）：显式 `--subject "<标题> (#N)"` 被 GitHub 逐字落地、不重复追加，落地 body 与快照逐字节一致。验收标准（dev 上 subject = `标题 (#N)`、body = 快照）已满足；合并后核对落地提交仍是固定动作，只是预期值如今已知。
+
+code 路径也已由 #36 实弹验证（2026-11-17）：不传 `--subject` / `--body` 时，subject = `标题 (#36)`、正文为空；#34 用显式 `--subject` 导致的缺号事故是本条反例。
 
 ### 与 C6 pr-meta 的关系：有意冗余
 
