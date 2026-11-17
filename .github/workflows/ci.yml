@@ -38,7 +38,10 @@ jobs:
               - 'pnpm-workspace.yaml'
               - 'package.json'
             api:
+              # go.mod / go.sum / .golangci.yml / docs/openapi.yaml 都在 apps/api/** 内
               - 'apps/api/**'
+              - 'Taskfile.yml'
+              - '.github/workflows/ci.yml'
 
   web:
     name: web
@@ -73,8 +76,23 @@ jobs:
     if: always() && (github.event_name == 'push' || needs.changes.outputs.api == 'true')
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "api job placeholder — t2 填充 lint / build / test / gen:check"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/api/go.mod
+          cache-dependency-path: apps/api/go.sum
+      - uses: arduino/setup-task@v2
+        with:
+          version: 3.54.0
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify Task
+        run: task --version
+      - name: Add Go bin to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Install Go tools
+        run: task setup:go
+      - name: API checks
+        run: task ci:api
 
   title:
     name: title

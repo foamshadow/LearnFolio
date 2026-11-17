@@ -49,3 +49,4 @@ t0 落地后（PR #9），CI 的真实形态第一次可测量：PR run 与 push
 - 2026-11-17 C6 落地（PR #27）：新增 `pr-meta` job，校验 PR 描述末行 trailer、正文无评审段；不查 docs 单提交（ADR-0010 已撤销）；ADR-0009 部分取代待补。
 - 2026-11-17 ADR-0011 补记：`pr-meta` 扩为拒绝评审状态行（REVIEW / Reviewer / Author / Reviewed-by）；不校验评论层 Reviewer；ADR-0011 部分取代 ADR-0009，C6 记账闭合。
 - 2026-11-17 C4 随 t1 落地（PR #36）：`changes.filters` 补 Taskfile / .nvmrc / Prettier 配置 / catalog 脚本 / ci.yml；web job 同步真实化。
+- 2026-11-18 C4 扩展（PR #40）：`changes.api` 补 Taskfile.yml / .github/workflows/ci.yml；apps/api 内文件（go.mod / go.sum / .golangci.yml / docs/openapi.yaml）由 `apps/api/**` 覆盖，api job 同步真实化。
