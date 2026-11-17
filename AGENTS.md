@@ -36,7 +36,7 @@
   （specs / adr）不得被引用（提及用标题）——改号成本因此为零；无编号文档路径即标识、
   可被引用，但 proposals 的 slug 一经创建即冻结（内容随便改，文件名不改）；
   废弃不删文件只改 status（目录即登记簿）
-- 方向变更 = 新编号取代链（supersedes / superseded-by，仅指直接取代者）；
+- 方向变更 = 新编号取代链（supersedes / superseded-by，仅指直接取代者）；**部分取代只挂正向链**（旧文档标 deprecated、不填 superseded-by；反查用新文档的 supersedes）；
   语义变更走尾部"变更记录"追加（历史不删）；验收条目 append-only（废弃划掉留槽）
 - spec 的 ready 须至少一名非作者核心成员批准（bootstrap 例外仅 SPEC-0001，已记录于该 spec）
 - 作者键在本文档登记、永不更改、与 GitHub 用户名解耦；状态与标签词表见 docs/README.md（闭合）

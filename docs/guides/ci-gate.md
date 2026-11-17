@@ -15,8 +15,6 @@ related: [ADR-0009, ADR-0011, SPEC-0001, ADR-0003, ADR-0004]
 
 实现本体已随 t0 / #27 入库：`.github/workflows/ci.yml`（工作流定义）+ `.github/scripts/` 四个脚本（aggregate / check-title / check-attribution / check-pr-meta）+ PR 描述模板。本文讲门禁的**结构与读法**；行为与本文不符时以实现文件为准、视为本文 bug 同 PR 修正；设计出处是 SPEC-0001-A5、ADR-0009 与 ADR-0011（C6 / 评审署名部分）。
 
-> 过渡注记（ADR-0011 文档先行）：本文已按 ADR-0011 描述 `Reviewed-by` / `pr-meta` 的目标行为；脚本收紧随紧随的 `fix/ci-review-attribution` PR 到达。落地前 `check-pr-meta.sh` 仍只查末行 trailer 与 `## 评审`，`check-attribution.sh` 只查 `Assisted-by`；这段落差是已计划的，不是本文 bug。
-
 ## 核心图景
 
 ### CI 地基概念：五个词讲清 GitHub Actions
@@ -116,7 +114,7 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
 
 ### 补充：PR 描述元数据（pr-meta，C6）
 
-**规定**：`pr-meta` 只在 `pull_request` 事件运行，校验 PR 描述最后一行是合法 `Assisted-by` trailer、正文无评审状态行（`REVIEW` / `Reviewer` / `Author` / `Reviewed-by` 开头，含 `## 评审…`）；并入 `ci-ok`；push 下 skipped，由矩阵放行。它**不校验**评论层 Reviewer 或 commit 的 `Reviewed-by`——前者不在 PR 事件 payload 中，后者由 attribution 校验（ADR-0011）。
+**规定**：`pr-meta` 只在 `pull_request` 事件运行，校验 PR 描述最后一行是合法 `Assisted-by` trailer、正文无评审状态行（`REVIEW` / `REVIEW-FIX` 后跟分隔符或行尾；`Reviewer` / `Author` / `Reviewed-by` 后跟冒号；含评审标题段）；并入 `ci-ok`；push 下 skipped，由矩阵放行。它**不校验**评论层 Reviewer 或 commit 的 `Reviewed-by`——前者不在 PR 事件 payload 中，后者由 attribution 校验（ADR-0011）。
 
 **为什么**：docs PR 的 squash 正文取自 PR 描述。PR run 校验的是分支提交，`title` 只管标题，`attribution` 只管提交——**描述是死角**。`pr-meta` 是合并前的 body backstop。
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ci-ok 结果矩阵（ADR-0009 D3）：skipped 不是通行证，必须与触发上下文绑定
+# ci-ok 结果矩阵（ADR-0011-D3；C6 部分取代 ADR-0009 D3）：skipped 不是通行证，必须与触发上下文绑定
 set -euo pipefail
 
 : "${EVENT:?EVENT 未设置}"
