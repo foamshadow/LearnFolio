@@ -43,7 +43,7 @@ adopted-as: ""
 - **评审署名双轨**（ADR-0011）：PR 状态评论的角色行（BLOCKED/PASS `Reviewer`；REVIEW-FIX `Author`）；commit 级提交前互审写 `Reviewed-by`（opt-in）；`Pi` / `glm-5.3` 已登记（与 `glm-5.3-flash` 区分）；#27–#29 的历史缺口不回填。
 - **C6 `pr-meta` 已落地**（#27）：PR 描述末行 trailer、正文无评审状态行（含 `Reviewed-by` 行）；并入 `ci-ok`；不查 docs 提交数、不校验评论层 Reviewer（ADR-0011）。
 - **ADR-0010 已 accepted**（#29）：message-only rewrite；docs 单提交撤销；ADR-0005 `deprecated`。
-- **未实现 / 未实测**：`scripts/merge.sh` / `retract.sh` 未写；`(#N)` 自定义 subject 未实测；ruleset vs break-glass 未定。
+- **未实现 / 未实测**：`scripts/merge.sh` / `retract.sh` 未写；ruleset vs break-glass 未定。`(#N)` 已实测结案（2026-11-17，#33：显式 subject 逐字落地、不重复追加，见演进记录）。
 
 ### 1. 合入前：快照合并（P0，硬保证）
 
@@ -58,7 +58,7 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
   3. 与 PASS 评论的 hash 比对；不一致即作废 PASS，退回重审；同时要求 PASS 评论末行有 `Reviewer:`；
   4. docs 用快照合并：`gh pr merge --squash --subject "<title> (#N)" --body-file <snapshot>`；code 用 `gh pr merge --merge --subject "<title>"`（merge commit 正文为空）。
 - 作者在 PASS 后不得编辑 title/body；编辑即作废 PASS。
-- 第一次使用前验证 `(#N)` 后缀：自定义 subject 是否被平台重复追加。验收标准固定为“dev 上 subject = `标题 (#N)`、body = 快照”。
+- 第一次使用前验证 `(#N)` 后缀：自定义 subject 是否被平台重复追加。验收标准固定为“dev 上 subject = `标题 (#N)`、body = 快照”。已于 #33 首用实测通过：subject 逐字落地（手写的 `(#33)` 无重复追加）、body 与快照逐字节一致。
 
 #### docs 与 code 分路径
 
@@ -149,7 +149,7 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
 
 - PR 的 `ci-ok` 检查的是 PR head 提交；squash 提交在 merge 时生成，PR CI 没看过它。
 - push 的 `ci-ok (push)` 是事后发现，不是 required；它拦不住 merge。
-- C6 已落地（PR #27）：`pr-meta` job 校验 PR 描述末行 `Assisted-by` trailer、正文无评审清单段；失败并入 `ci-ok`；push 下 skipped；docs 单提交不查（ADR-0010 已撤销）。触发：`pull_request` 的 `opened / edited / synchronize / reopened`（必须含 `edited`，因为 body 编辑不换 SHA）；只跑 PR，不跑 push。价值是**PR 时的 body backstop**；body 在 check 之后仍可改，check 可能 stale，硬保证仍是快照合并。ADR-0009 部分取代待补（C6 登记，另行处理）。
+- C6 已落地（PR #27）：`pr-meta` job 校验 PR 描述末行 `Assisted-by` trailer、正文无评审清单段；失败并入 `ci-ok`；push 下 skipped；docs 单提交不查（ADR-0010 已撤销）。触发：`pull_request` 的 `opened / edited / synchronize / reopened`（必须含 `edited`，因为 body 编辑不换 SHA）；只跑 PR，不跑 push。价值是**PR 时的 body backstop**；body 在 check 之后仍可改，check 可能 stale，硬保证仍是快照合并。ADR-0009 部分取代已由 ADR-0011 闭合（#31）。
 - PASS 是评论约定，不是 CI 检查；当前 required 只有 `ci-ok`。快照脚本读取 PASS 评论，属于流程级约束；Merge 按钮仍可绕过。
 - 没有 PASS 之前，只要 `ci-ok` 绿，Merge 按钮就可用；GitHub 不要求 PASS。PASS 只是流程约定，不是 merge 前置条件。
 - 不接受“靠 auto-merge / merge queue 解决”：两者仍读实时描述；queue 只验树，不验提交正文。
@@ -160,7 +160,7 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
 
 1. 撤回窗口：24 小时 + 下一任务分支前（取先到）是否过短/过长？还是只按“下一次 push CI 绿之前”？
 2. 合规 rewrite：迁 ruleset + bypass actor，还是先用 break-glass 脚本？前者一劳永逸，但要改仓库保护配置。
-3. `gh pr merge --subject` 的 `(#N)` 行为需实测：自定义 subject 是否被平台重复追加；若重复，是否只快照 body、让平台默认 title。
+3. ~~`gh pr merge --subject` 的 `(#N)` 行为需实测~~ **已结案（2026-11-17，#33）**：自定义 subject 被平台逐字落地、**不重复追加**；docs 命令保持 `--subject "<标题> (#N)"` 现状；code 路径不显式传 subject（见演进记录）。
 4. `scripts/` 放根目录还是 `tools/`？随 t1 Taskfile 落地，还是单独 infra 任务？
 5. 旧 PR 页面标注：只改 title/description，还是另加 journal？merged PR 无法删除，标注是唯一的“软清理”。
 
@@ -169,8 +169,8 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
 - **pilot**：`scripts/merge.sh` 落地后，至少 3 个 PR（docs 与代码各至少 1 个）用它合并；0 次“PASS 后描述变更导致落地正文不一致”；`(#N)` 行为验证通过。
 - **撤回演练**：一次头部元数据错误走 P2a 或 P2b——历史干净、保护恢复、clone 通知齐全；P2a 验 0 新号，P2b 验新 PR 页面与旧 PR 标注。
 - **敏感数据桌面演练**（假密钥）：轮换 + rewrite + 验证；确认 revert 不在流程里。
-- **毕业产物**：评审协议已毕业（#28，AGENTS + guide）；C6 `pr-meta` 已落地（#27）；待做 `docs/guides/merge.md`、`scripts/merge.sh` / `retract.sh`、撤回窗口规则、ADR-0009 部分取代（C6 登记）。
-- **依赖**：t1 的根 Taskfile（`task merge` / `task retract`）；`(#N)` 实测；ruleset 迁移作为单独 infra 任务，不塞进本 proposal 的首次落地。
+- **毕业产物**：评审协议已毕业（#28，AGENTS + guide）；C6 `pr-meta` 已落地（#27）；`docs/guides/merge.md` 已落地（#33）；ADR-0009 部分取代已闭合（ADR-0011）；待做 `scripts/merge.sh` / `retract.sh`、撤回窗口规则定稿。
+- **依赖**：t1 的根 Taskfile（`task merge` / `task retract`）；ruleset 迁移作为单独 infra 任务，不塞进本 proposal 的首次落地。
 
 ## 被否方案
 
@@ -186,3 +186,4 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
 - 2026-11-16 第一轮决策：PASS 模板归 review-protocol；软约束（不引入 review-gate/merge bot）；人类授权后 agent 执行合并；docs/code 分路径；收口后仍允许 rewrite（当时需同步 AGENTS 冻结线，11-17 已完成）；PASS 模板加 `body-sha256`；`required_approving_review_count` 保持 0；评论靠共识管理，不镜像。
 - 2026-11-16 第二轮决策：ADR-0010 方向（dev/main/tag message-only；内容不允许；journal 留痕）；docs 单提交拟撤销；review-protocol 计划先毕业。后续 11-17 已落地（review #28、ADR #29）。
 - 2026-11-17 事实对齐：review-protocol #28 毕业（PASS 规则迁 AGENTS/guide）；C6 #27 落地；ADR-0010 #29 accepted（ADR-0005 `deprecated`、docs 单提交撤销）；scripts 未实现、`(#N)` 未实测。
+- 2026-11-17 开放问题 3 实测结案（#33）：`docs/guides/merge.md` 首版落地，按快照合并手动六步合并——PASS `target` / `body-sha256` 校验通过；落地 subject 的手写 `(#33)` **逐字落地、无重复追加**；落地 body 与快照逐字节一致；dev push CI 一次全绿（0 补救提交、0 额外号）。顺带证伪 proposal §1 的 code 命令：显式 `--subject "<标题>"` 因平台不追加会丢 `(#N)`，merge.sh 定稿时按 guide 的默认标题路径反向统一；同批修正两处过时记账（ADR-0009 部分取代已由 ADR-0011 闭合、`(#N)` 移出未实测清单）。
