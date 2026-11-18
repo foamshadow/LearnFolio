@@ -125,6 +125,8 @@ brew install go-task
 
 # Arch Linux
 sudo pacman -S go-task
+# 注意：Arch 包的二进制名是 go-task（不是 task）。做个软链与本文档其余部分保持一致：
+sudo ln -sf /usr/bin/go-task /usr/local/bin/task
 
 # Windows（PowerShell）
 winget install Task.Task
@@ -148,12 +150,12 @@ cd LearnFolio
 cp .env.example .env
 ```
 
-当前有两个变量：
+当前有两组变量：
 
-- `NUXT_PUBLIC_API_BASE`：Web 请求的 API 地址，默认 `http://localhost:8080`；
-- `PORT`：API 监听端口，默认 `8080`。
+- Web / API：`NUXT_PUBLIC_API_BASE`（Web 请求的 API 地址，默认 `http://localhost:8080`）、`PORT`（API 监听端口，默认 `8080`）；
+- 本地数据库：`POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` / `POSTGRES_PORT`（缺省值见 `.env.example`；消费者是 `task db:up`，见第 9 步）。
 
-没有 `.env` 也能启动：Nuxt 走 `nuxt.config.ts` 的硬编码缺省，Go 走代码里的 `8080` 缺省。需要改端口或指向别的 API 时再建。
+没有 `.env` 也能启动 Web 与 API：Nuxt 走 `nuxt.config.ts` 的硬编码缺省，Go 走代码里的 `8080` 缺省。需要改端口或指向别的 API 时再建。唯一例外是本地数据库（第 9 步）：`task db:up` 必须先有 `.env`——compose 从它读 `POSTGRES_*`，缺文件直接报错，不会静默跳过。
 
 `.env` 已 gitignore，不要提交；`.env.example` 才是入库模板。
 
@@ -256,7 +258,43 @@ task ci:api
 
 它执行 `go build ./...`、`go test ./...`、`golangci-lint run ./...`、`task gen:check`。
 
-### 9. 提交前跑 CI 等价物
+### 9. 起本地数据库（可选）
+
+Phase 0 的业务代码不连数据库，这一步可以跳过；想提前把依赖服务跑起来（或为 Phase 2 做准备）时再执行。前提是 Docker：
+
+```bash
+# macOS / Windows：Docker Desktop，按 https://docs.docker.com/get-started/get-docker/ 安装
+# Arch Linux
+sudo pacman -S docker
+sudo systemctl enable --now docker
+# 其他系统：按 https://docs.docker.com/engine/install/ 安装
+
+docker info   # 能输出 Server Version 即可用
+```
+
+起 / 停：
+
+```bash
+cp .env.example .env   # db:up 的前置：compose 从根 .env 读 POSTGRES_*（第 4 步建过就跳过）
+task db:up             # 启动 PG，后台运行
+task db:down           # 停止；数据保留在命名卷里，下次 db:up 还在
+```
+
+确认健康（`STATUS` 列从 `health: starting` 变 `healthy`）：
+
+```bash
+docker compose --project-directory . --env-file .env -f infra/docker-compose.yml ps
+```
+
+几个设计决定：
+
+- PG 的端口、用户、库名都来自根 `.env`（缺省见 `.env.example`）；`POSTGRES_PORT` 与本机已有 PG 或其他工作树冲突时改它错开，容器内恒 5432。
+- compose 的 project 名取 `--project-directory` 的目录名，所以主仓库与各 `.worktrees/` 工作树的数据库互不共享（容器与数据卷各自一套）。
+- Redis 服务已在 `infra/docker-compose.yml` 注释预留，Phase 2 启用；Go 的连接串 `DATABASE_URL` 同批（`.env.example` 里有拼装格式注释）。
+
+> `docker compose ... down -v` 会连数据卷一起删（本地库清零）。Phase 0 无业务数据，误删无碍；Phase 2 起这条命令等于删开发库，慎用。
+
+### 10. 提交前跑 CI 等价物
 
 ```bash
 task ci
@@ -296,6 +334,8 @@ task format
 | 只装 Go 工具 | `task setup:go` |
 | Web 日常开发 | `task dev:web` |
 | API 日常开发 | `task dev:api` |
+| 起本地数据库 | `task db:up` |
+| 停本地数据库 | `task db:down` |
 | 提交前 | `task ci` |
 | 只跑 API 检查 | `task ci:api` |
 | 生成契约 | `task gen` |
@@ -329,7 +369,7 @@ Node 由 `.nvmrc` 管，pnpm 由 `packageManager` 管，npm 依赖由 `catalog:`
 
 ### 为什么用 Task，而不是根 npm scripts
 
-`task setup` / `task ci` / `task gen` 是跨语言的入口。t2 加了 `gen` / `gen:check` / `dev:api`，t6 会加 `db:up`；这些命令不属于某一个 npm package，也不该塞进根 `package.json`。CI 调 `task ci:web` / `task ci:api`，本地也调它们，命令清单只有一份。
+`task setup` / `task ci` / `task gen` 是跨语言的入口。t2 加了 `gen` / `gen:check` / `dev:api`，t6 加了 `db:up` / `db:down`；这些命令不属于某一个 npm package，也不该塞进根 `package.json`。CI 调 `task ci:web` / `task ci:api`，本地也调它们，命令清单只有一份。
 
 `task setup` 聚合 Node 与 Go 两个子任务，是 A10 的“一条命令搭环境”入口；`setup:node` 保留给纯 Web 场景，但不会安装 Go 工具，所以不能替代完整 A10 路径。
 
@@ -341,6 +381,10 @@ Nuxt 在 `apps/web` 下启动，默认只读 `apps/web/.env`；Go 也不会自�
 - `task dev:api` 的任务目录是 `apps/api`，所以写 `../../.env`。
 
 这样不会在 app 目录里复制第二份 `.env`，也不会让密钥散落。
+
+### 为什么 compose 命令写死在 Taskfile 里
+
+`infra/docker-compose.yml` 在子目录里，从仓库根裸跑 `docker compose up` 找不到配置；参数里还有 `--env-file .env` 和 `--project-directory .`，各敲一遍容易漂移。`db:up` / `db:down` 把固定参数封装成唯一入口（A8），`ps` 之类的低频子命令按同参数手敲即可（见第 9 步）。project 名取 `--project-directory` 的目录名，主仓库与各工作树因此天然隔离——这也是不写死 `container_name` 的原因：固定容器名会跨 project 冲突。
 
 ### 为什么本地 `pnpm install`，CI 却用 `--frozen-lockfile`
 
@@ -365,6 +409,7 @@ Go module 根是 `apps/api`，不是仓库根；根目录没有 `go.mod`。`task
 - **在仓库根跑 `pnpm dev`**：根 `package.json` 没有 `dev` script；用 `task dev:web`。
 - **Node 版本不对但继续开发**：pnpm 可能只警告；CI 会用 `.nvmrc` 的 24.20.0 跑，本地结果不可比。先 `fnm use`。
 - **把 `.env` 放在 `apps/web`**：Nuxt 会读它，但 `task dev:web` 的约定是根 `.env`；两处并存会产生“到底哪个生效”的歧义。统一放根。
+- **没建 `.env` 就 `task db:up`**：compose 的 `--env-file .env` 找不到文件直接报错（与 `dev:web` / `dev:api` 缺 `.env` 时静默跳过不同）。先 `cp .env.example .env`。
 - **手写依赖版本**：`task check:catalog` 会拦；新增依赖用 `pnpm add`（`catalogMode: strict` 会把它写进 catalog）或手动写 `catalog:`。
 - **同时引入另一套格式化器**：编辑器保存已配置 Prettier + ESLint；不要再加一个 formatter，避免保存一套、CI 另一套。
 - **提交 `.env` / `node_modules` / `.nuxt` / `.output`**：都已在 `.gitignore`；`.env.example` 例外，必须入库。
@@ -373,7 +418,7 @@ Go module 根是 `apps/api`，不是仓库根；根目录没有 `go.mod`。`task
 ## 延伸
 
 - `AGENTS.md`：工具链边界、Go 分层纪律、契约与生成物、验证命令
-- [SPEC-0001](../specs/0001-phase-0-scaffold.md)：t1 / t2、A1 / A3 / A4 的验收原文
+- [SPEC-0001](../specs/0001-phase-0-scaffold.md)：t1 / t2 / t6、A1 / A3 / A4 / A8 的验收原文
 - [Git 流程讲解](git-workflow.md)：分支、合并、提交消息
 - `Taskfile.yml` / `pnpm-workspace.yaml` / `.nvmrc` / `package.json` / `apps/api/go.mod` / `apps/api/.golangci.yml`：本文提到的版本与配置真源
 - [Task 官方文档](https://taskfile.dev/)
