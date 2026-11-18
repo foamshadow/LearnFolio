@@ -8,7 +8,7 @@ related: [SPEC-0001, ADR-0011]
 
 # pi -p 评审调用无 HTTP 超时：三次挂死、外层 timeout 兜底
 
-> agent 起草、人审定（作者键 = 审定者）。t6 的 commit 级评审（Reviewed-by，
+> agent 起草、人审定（作者键 = 审定者）。本篇关联 PR #46。t6 的 commit 级评审（Reviewed-by，
 > 语义见 ADR-0011）由 Claude Code 会话经 pi CLI 非交互模式（`pi -p -c`）调
 > GLM-5.3 执行，会话跨 commit 续接（人类决策：复用评审员上下文，不每次重开）。
 > 本篇记录该链路当日的三次挂死、判定方法与向前生效的使用纪律。

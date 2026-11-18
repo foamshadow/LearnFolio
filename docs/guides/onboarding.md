@@ -13,11 +13,11 @@ related: [SPEC-0001, ADR-0007]
 
 给第一次 clone 仓库、要把 `apps/web` 与 `apps/api` 跑起来的成员（人类或 agent）。前置只需要会三件事：`git clone`、`git commit`、`git push`，以及使用终端。不需要先懂 Nuxt、pnpm workspace、Go 或 Task——本文会把每个工具第一次出现时的作用讲清楚。
 
-本文覆盖 **Node + Go 侧**（`apps/web`、`apps/api` 与 workspace 根）；Docker（t6）段落后续补入。规则真源仍是 `AGENTS.md` 与 `SPEC-0001`，本文只解释怎么把环境搭起来，不新增规则。
+本文覆盖 **Node + Go 侧**（`apps/web`、`apps/api` 与 workspace 根）与**本地依赖服务**（第 9 步，Docker Compose）。规则真源仍是 `AGENTS.md` 与 `SPEC-0001`，本文只解释怎么把环境搭起来，不新增规则。
 
 ## 核心图景
 
-本地环境由六层组成，每层只认一个版本真源：
+本地环境由七层组成，每层只认一个版本真源（第七层是可选项——Phase 0 业务代码不连数据库，不起服务可跳过）：
 
 | 层 | 真源 | 谁消费 |
 | --- | --- | --- |
@@ -27,6 +27,7 @@ related: [SPEC-0001, ADR-0007]
 | Go | `apps/api/go.mod` 的 `go` 指令（`1.27.4`） | 本机 `go`；CI 的 `setup-go` |
 | Go 工具 | `Taskfile.yml` 的 `GOLANGCI_LINT_VERSION`（`v2.15.0`） | `task setup:go`；CI 的同一命令 |
 | 命令 | 根 `Taskfile.yml` | 本地 `task`；CI 的 `task` |
+| 本地依赖服务 | `infra/docker-compose.yml` 的镜像 tag（`postgres:17.12`） | `task db:up`；容器健康检查 |
 
 搭好之后，日常只记五条命令：
 
@@ -117,7 +118,7 @@ npm install -g pnpm@12.19.0
 
 ### 3. 安装 Task
 
-Task（go-task）是跨语言任务运行器。仓库根只有一份 `Taskfile.yml`，Node、Go 与未来的 Docker 命令都从它进入。
+Task（go-task）是跨语言任务运行器。仓库根只有一份 `Taskfile.yml`，Node、Go 与 Docker 命令都从它进入。
 
 ```bash
 # macOS
@@ -265,11 +266,13 @@ Phase 0 的业务代码不连数据库，这一步可以跳过；想提前把依
 ```bash
 # macOS / Windows：Docker Desktop，按 https://docs.docker.com/get-started/get-docker/ 安装
 # Arch Linux
-sudo pacman -S docker
+sudo pacman -S docker docker-compose   # compose 子命令由独立的 docker-compose 包提供，缺它 db:up 会报 not a docker command
 sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"        # 免 sudo 跑 docker；重新登录或 newgrp docker 生效
 # 其他系统：按 https://docs.docker.com/engine/install/ 安装
 
-docker info   # 能输出 Server Version 即可用
+docker info              # 能输出 Server Version 即可用
+docker compose version   # compose 插件就绪（task db:up 依赖它）
 ```
 
 起 / 停：
