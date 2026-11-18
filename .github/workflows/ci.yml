@@ -1,0 +1,153 @@
+# CI 门禁：单 workflow、多 job，required check 只挂 ci-ok（ADR-0009）
+# 触发：PR（含 edited——改标题必须重新校验）+ push 到 dev/main（全量跑，事后发现语义冲突）
+name: CI
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+  pull-requests: read # dorny/paths-filter 读 PR 文件列表
+
+jobs:
+  changes:
+    name: changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      api: ${{ steps.filter.outputs.api }}
+    steps:
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            web:
+              - 'apps/web/**'
+              - 'packages/**'
+              - 'Taskfile.yml'
+              - '.nvmrc'
+              - '.prettierrc'
+              - '.prettierignore'
+              - '.github/scripts/check-catalog.mjs'
+              - '.github/workflows/ci.yml'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'package.json'
+            api:
+              # go.mod / go.sum / .golangci.yml / docs/openapi.yaml 都在 apps/api/** 内
+              - 'apps/api/**'
+              - 'Taskfile.yml'
+              - '.github/workflows/ci.yml'
+
+  web:
+    name: web
+    needs: changes
+    if: always() && (github.event_name == 'push' || needs.changes.outputs.web == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: arduino/setup-task@v2
+        with:
+          version: 3.54.0
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify Task
+        run: task --version
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Workspace checks
+        run: task check:catalog
+      - name: Web checks
+        run: task ci:web
+
+  api:
+    name: api
+    needs: changes
+    if: always() && (github.event_name == 'push' || needs.changes.outputs.api == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/api/go.mod
+          cache-dependency-path: apps/api/go.sum
+      - uses: arduino/setup-task@v2
+        with:
+          version: 3.54.0
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify Task
+        run: task --version
+      - name: Add Go bin to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Install Go tools
+        run: task setup:go
+      - name: API checks
+        run: task ci:api
+
+  title:
+    name: title
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate PR title and branch direction
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: bash .github/scripts/check-title.sh
+
+  pr-meta:
+    name: pr-meta
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check PR description metadata
+        run: bash .github/scripts/check-pr-meta.sh
+
+  attribution:
+    name: attribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check Assisted-by trailers
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: bash .github/scripts/check-attribution.sh
+
+  ci-ok:
+    name: ${{ github.event_name == 'push' && 'ci-ok (push)' || 'ci-ok' }}
+    needs: [changes, web, api, title, pr-meta, attribution]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aggregate results
+        env:
+          EVENT: ${{ github.event_name }}
+          CHANGES: ${{ needs.changes.result }}
+          WEB: ${{ needs.web.result }}
+          API: ${{ needs.api.result }}
+          TITLE: ${{ needs.title.result }}
+          PR_META: ${{ needs.pr-meta.result }}
+          ATTRIBUTION: ${{ needs.attribution.result }}
+          WEB_CHANGED: ${{ needs.changes.outputs.web }}
+          API_CHANGED: ${{ needs.changes.outputs.api }}
+        run: bash .github/scripts/aggregate.sh

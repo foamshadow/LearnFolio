@@ -8,7 +8,7 @@
 | `adr/` | 选型决策记录 | 不可变 = 正文四节；status 单向流转 accepted → deprecated / superseded |
 | `journal/` | 开发过程日志（年份分组，一篇 = 一个事件） | 可变：自由追加改写 |
 | `learning/<作者键>/` | 学习笔记（事故驱动："X 撞了我"），网站内容素材（发布走蒸馏） | 可变：自由追加改写 |
-| `guides/` | 教学与剖析文档（主动建构："我要学会 X"） | 可变：自由追加改写 |
+| `guides/` | 教学与剖析文档（主动建构："我要学会 X"）；写作标准见 `_template.md`——默认读者 = 学习者（未掌握全部前置知识），详尽优先于简洁，讲相关技术本身 | 可变：自由追加改写 |
 | `proposals/` | **孵化区**：想法的第一落点；不占编号，毕业才进正式层 | 可变偏受控（见"proposals 与毕业制"） |
 
 ## 标识与命名
@@ -83,6 +83,24 @@ docs/learning/ 一级目录名与 journal 文件名中的作者标识；在 AGEN
 - 冲突时以 AGENTS.md 为准；冲突本身视为 guides 的 bug，同一 PR 内修正
 - AGENTS / ADR 的 PR 触及 guides 已覆盖的主题时，须同 PR 更新 guides
   （维护触发器——否则 guides 静默过期）
+
+## 决策线（ADR 阅读顺序）
+
+ADR 按决策时间排列，单看是碎片，按阶段读是一条线。建仓前的策划过程未随仓库保存（见各 ADR 的补记说明与 SPEC-0001 的 `source` 字段），决策已回填为 0001 / 0002 / 0003。
+
+| 阶段 | ADR | 状态 | 回答什么 |
+| --- | --- | --- | --- |
+| 选型（建仓前） | ADR-0001 技术栈、ADR-0002 许可证 | accepted | 用什么、怎么授权 |
+| 流程设计（建仓） | ADR-0003 分支与合并 | deprecated（部分条款） | 怎么协作、账本怎么读 |
+| 运行修正（建仓次日） | ADR-0004 agent 署名 | accepted | 来源怎么记 |
+| 运行修正（建仓次日） | ADR-0005 双合并策略 | deprecated（部分条款） | 文档怎么落 |
+| 元决策 | ADR-0006 文档体系与规则生长 | accepted | 为什么是六类、规则怎么长 |
+| 协作与继承（建仓次日） | ADR-0007 授权模型、ADR-0008 遗产继承 | accepted | 谁能做什么、从旧项目取什么 |
+| 交付（Phase 0） | ADR-0009 CI 门禁策略 | deprecated（ADR-0011 部分取代） | 门禁为什么这样搭；C6 相关看 ADR-0011 |
+| 历史修复（Phase 0） | ADR-0010 历史修复与 docs 分支 | accepted | message-only rewrite、docs 单提交撤销 |
+| 评审署名（Phase 0） | ADR-0011 评审署名双轨与 pr-meta 边界 | accepted | 状态评论角色行、commit 级 Reviewed-by、Pi/glm-5.3 登记、C6 部分取代 |
+
+读法：先看阶段，再看单篇。`deprecated` 表示部分条款已被取代，沿 `supersedes` 找继任者（ADR-0005 只取代 ADR-0003 的合并方式条款；ADR-0010 只取代 ADR-0005 的 docs 单提交条款；ADR-0011 只取代 ADR-0009 的 C6 job 清单、push 跳过集合与结果矩阵条款，ADR-0009 按部分取代约定不挂 superseded-by）。**新增 ADR 时在本表追加一行**——这张表就是决策线的入口。
 
 ## frontmatter
 

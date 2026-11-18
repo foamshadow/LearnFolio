@@ -1,0 +1,117 @@
+{
+  /**
+   *  NOE  TODO 九标记高亮（AGENTS.md「TODO 注释规范」的机器分发载体，含 WARN 警告）
+   *  Tips  配置取自团队环境裁剪基线；个人层（user settings）可自由叠加自定义标记，
+   *        user 层与 workspace 层按键合并、不冲突。
+   *  Tips  t1 已落地格式化：保存时 Prettier 统一格式，ESLint 负责可自动修复的规则；
+   *        配置见 .prettierrc、.prettierignore 与 apps/web/eslint.config.mjs。
+   */
+  //  Tips  先格式化再跑 ESLint 修复，避免两者对同一段代码互相覆盖
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": ["javascript", "typescript", "vue"],
+  //  Tips  useColourScheme 默认 true 会按 tags 顺序轮转分配红橙黄绿蓝靛紫（覆盖
+  //        customHighlight 的 foreground），必须显式关闭。
+  "better-todo-tree.highlights.useColourScheme": false,
+  //  Tips  行尾分工：git 层 = .gitattributes、编辑器层 = .editorconfig（end_of_line），
+  //        后者需 editorconfig 扩展承接；本条为该扩展未装时的兜底
+  "files.eol": "\n",
+  //  Tips  worktree 是独立检出（.git 是指向主仓库 .git/worktrees/<id>/ 的指针文件），
+  //        不排除会随并行任务拖慢文件监视器
+  //        （路径约定见 AGENTS.md「多工作树」节；此为性能保护，资源管理器仍可见）
+  "files.watcherExclude": {
+    "**/.worktrees/**": true
+  },
+  //  Tips  search.exclude 与 watcherExclude 分工：后者管监视性能，前者管全局搜索去重——
+  //        worktree 里的代码副本不排除的话 Ctrl+Shift+F 会每个文件命中 N 份
+  "search.exclude": {
+    "**/.worktrees/**": true
+  },
+  //  Tips  本仓库 AGENTS / 注释 / journal 全中文，关闭 VSCode 对中文的"可疑 Unicode"
+  //        黄框高亮（ambiguousCharacters / nonBasicASCII），避免中文注释被大面积干扰
+  "editor.unicodeHighlight.ambiguousCharacters": false,
+  "editor.unicodeHighlight.nonBasicASCII": false,
+  //  Tips  ci.yml 的补全与 schema 校验（redhat.vscode-yaml 的配套）；compose 的 schema
+  //        关联随 t6 的 infra/docker-compose.yml 出现时再加（范围守界）
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": [".github/workflows/*.yml"]
+  },
+  "better-todo-tree.regex.regex": "((%|#|//|<!--|^\\s*\\*)\\s*($TAGS)|^\\s*- \\[ \\])",
+  "better-todo-tree.general.tags": [
+    "TODO",
+    "NOE",
+    "MARK",
+    "TEST",
+    "BUG",
+    "FIXME",
+    "WARN",
+    "update",
+    "Tips"
+  ],
+  "better-todo-tree.tree.scanMode": "workspace",
+  "better-todo-tree.highlights.defaultHighlight": {
+    "type": "text",
+    "foreground": "#ffff00",
+    "background": "#857c8c",
+    "opacity": 0.5,
+    "iconColour": "#ffff00",
+    "gutterIcon": true
+  },
+  //  Tips  配色语义见 AGENTS.md「TODO 注释规范」表；色值与团队环境一致
+  "better-todo-tree.highlights.customHighlight": {
+    "TODO": {
+      "icon": "check",
+      "type": "text"
+    },
+    "NOE": {
+      "foreground": "#4fa5f8",
+      "iconColour": "#4fa5f8",
+      "icon": "info"
+    },
+    "MARK": {
+      "foreground": "#f90",
+      "icon": "note",
+      "rulerColour": "#f90",
+      "iconColour": "#f90"
+    },
+    "TEST": {
+      "foreground": "#df7be6",
+      "icon": "flame",
+      "rulerColour": "#df7be6",
+      "iconColour": "#df7be6"
+    },
+    "BUG": {
+      "foreground": "#eb5c5c",
+      "icon": "bug",
+      "rulerColour": "#eb5c5c",
+      "iconColour": "#eb5c5c"
+    },
+    "FIXME": {
+      "foreground": "#ff0000",
+      "iconColour": "#ff0000"
+    },
+    "WARN": {
+      "foreground": "#FFC107",
+      "icon": "warning",
+      "iconColour": "#FFC107",
+      "rulerColour": "#FFC107",
+      "fontWeight": "bold",
+      "type": "text"
+    },
+    "update": {
+      "foreground": "#5eec95",
+      "icon": "versions",
+      "rulerColour": "#5eec95",
+      "iconColour": "#5eec95"
+    },
+    "Tips": {
+      "foreground": "#ADD8E6",
+      "icon": "info",
+      "rulerColour": "#ADD8E6",
+      "iconColour": "#ADD8E6"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+# 版本单一真源：workspace 依赖（含根工具）一律写 catalog:，升级只改这里
+packages:
+  - apps/*
+  - packages/*
+
+catalogMode: strict
+
+catalog:
+  '@nuxt/eslint': 1.17.0
+  eslint: 10.15.0
+  eslint-config-prettier: 10.1.8
+  lefthook: 2.2.2
+  nuxt: 4.6.4
+  prettier: 3.10.1
+  typescript: 5.9.3
+  vue: 3.5.45
+  vue-tsc: 3.3.14
+
+# 构建脚本白名单：esbuild 经 Nuxt 安装平台二进制；lefthook 的 postinstall 会自动
+# install hooks，改由 task setup:hooks 显式执行（避免 pnpm install 的隐藏副作用）
+allowBuilds:
+  esbuild: true
+  lefthook: false
+
+# engines 仅声明：本地以 .nvmrc + fnm 为准，CI 用 setup-node 的 node-version-file
