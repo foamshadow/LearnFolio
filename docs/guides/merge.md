@@ -194,13 +194,13 @@ RS-2 / RS-3 全程 active；窗口只暂停 PR 与 `ci-ok`，不暂停 force / d
 
 - ~~` (#N)` 自定义 subject 行为未实测~~ 已实测结案（2026-11-17，#33：显式 subject 逐字落地、不重复追加；见 proposal 演进记录）；
 - ~~撤回窗口正式拍板仍待人类确认~~ 已定稿（Q1，2026-11-18，三条件）：bad 在 dev 头部 + 除 `backup/*` 外无分支以 bad 为祖先 + age ≤ 24h（`--window-hours` 可调），`retract.sh` preflight 全量校验；任一不满足走 revert / ADR-0010 D1；
-- pilot 仍为 0/3：脚本已落，尚无 PR 用它合并；
+- pilot 1/3（code: PR #50，`task merge` 自合并）；本复盘 PR（#51）合入后 2/3（docs）；第三票待 Phase 1；
 - 敏感数据桌面演练未做；
 - ~~ruleset 迁移 vs break-glass~~ 已结案（Q2，2026-11-18）：ruleset 三规则集落地，break-glass 仅历史回退；
 - ~~脚本落位与 `task merge` / `task retract`~~ 已结案（Q4，2026-11-18）：根 `scripts/`；`retract.sh` + `task retract` 已落，`merge.sh` / `task merge` 已随本任务落地（2026-11-18）；
 - ~~旧 PR 页面的标注方式未定~~ 已有实战口径（Q5，2026-11-17 #34：评论 Superseded by #36 + journal 映射；见上文 P2a / P2b 段）。
 
-proposal 的 pilot 毕业门槛：merge.sh 已落地；至少 3 个 PR（docs 与代码各 ≥1）用它合并、0 次"PASS 后描述变更导致落地正文不一致"、` (#N)` 验证通过；外加一次撤回演练与一次敏感数据桌面演练。`retract.sh` 已落地并通过 production dry-run，pilot 仍未开始；pilot 未完成前，手动流程保留为脚本不可用时的兜底，正常路径用 `task merge`。
+proposal 的 pilot 毕业门槛：merge.sh 已落地；至少 3 个 PR（docs 与代码各 ≥1）用它合并、0 次"PASS 后描述变更导致落地正文不一致"、` (#N)` 验证通过；外加一次撤回演练与一次敏感数据桌面演练。`retract.sh` 已落地并通过 production dry-run；pilot 1/3（code: PR #50），本复盘 PR（#51）合入后 2/3（docs）。pilot 未完成前，手动流程保留为脚本不可用时的兜底，正常路径用 `task merge`。
 
 ## 常见误区
 

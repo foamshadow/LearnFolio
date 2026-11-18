@@ -17,7 +17,8 @@ LearnFolio 是一个学习驱动的全栈工程实践项目：前端承载内容
 
 ## 状态
 
-Phase 0 收口：v0.1.0（覆盖 SPEC-0001，验收 A1–A10 已勾；A5 实测④与真实第二成员 onboarding 验收的待回填说明见 SPEC 变更记录。收口走 `dev` --no-ff 合回 `main` 与 annotated tag，收口后 `dev` 不追平 `main`）。施工图见
+Phase 0 完成：v0.1.0（SPEC-0001 A1–A10；`main` = `03aeab5`，tag `v0.1.0`；`dev` = `792f64f`，按约定不追平）。收口复盘见
+[docs/journal/2026/2026-11-19-foamshadow-phase0-retrospective.md](docs/journal/2026/2026-11-19-foamshadow-phase0-retrospective.md)，Phase 1 准备中（SPEC-0002 待起草）。施工图见
 [SPEC-0001](docs/specs/0001-phase-0-scaffold.md)，文档地图见 [docs/README.md](docs/README.md)。
 
 ## 开发环境
