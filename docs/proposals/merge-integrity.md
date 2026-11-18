@@ -44,7 +44,7 @@ adopted-as: ""
 - **C6 `pr-meta` 已落地**（#27）：PR 描述末行 trailer、正文无评审状态行（含 `Reviewed-by` 行）；并入 `ci-ok`；不查 docs 提交数、不校验评论层 Reviewer（ADR-0011）。
 - **ADR-0010 已 accepted**（#29）：message-only rewrite；docs 单提交撤销；ADR-0005 `deprecated`。
 - **已实现 / 已实测**：`scripts/retract.sh` + `task retract` 已随 #42 落地；三 ruleset 迁移已完成（2026-11-18）；`(#N)` 已实测结案（2026-11-17，#33：显式 subject 逐字落地、不重复追加，见演进记录）。
-- **已实现 / 未毕业**：`scripts/merge.sh` / `task merge` 已落地（2026-11-18，PR #50）；pilot 1/3（code: PR #50；docs 票为本复盘 PR，合入后 2/3）。Q1 撤回窗口已定稿（三条件，见开放问题 1）。
+- **已实现 / 未毕业**：`scripts/merge.sh` / `task merge` 已落地（2026-11-18，PR #50）；pilot 1/3（code: PR #50；docs 票为本复盘 PR（#51），合入后 2/3）。Q1 撤回窗口已定稿（三条件，见开放问题 1）。
 
 ### 1. 合入前：快照合并（P0，硬保证）
 
@@ -170,10 +170,10 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
 
 ## 毕业条件
 
-- **pilot**：`scripts/merge.sh` 落地后，至少 3 个 PR（docs 与代码各至少 1 个）用它合并；0 次“PASS 后描述变更导致落地正文不一致”；`(#N)` 行为验证通过。`merge.sh` 已落地；pilot 1/3（code: PR #50）；docs 票为本复盘 PR（合入后 2/3）。
+- **pilot**：`scripts/merge.sh` 落地后，至少 3 个 PR（docs 与代码各至少 1 个）用它合并；0 次“PASS 后描述变更导致落地正文不一致”；`(#N)` 行为验证通过。`merge.sh` 已落地；pilot 1/3（code: PR #50）；docs 票为本复盘 PR（#51；合入后 2/3）。
 - **撤回演练**：基本完成（#34→#36，2026-11-17，P2b）：历史干净、保护恢复、旧 PR 标注；ruleset 迁移于 2026-11-18 完成，`retract.sh` 的 production dry-run 通过；clone 通知齐全后闭项。
 - **敏感数据桌面演练**（假密钥）：轮换 + rewrite + 验证；确认 revert 不在流程里。
-- **毕业产物**：评审协议已毕业（#28，AGENTS + guide）；C6 `pr-meta` 已落地（#27）；`docs/guides/merge.md` 已落地（#33）；ADR-0009 部分取代已闭合（ADR-0011）；`scripts/retract.sh` + `task retract` 已落地（#42）；三 ruleset 迁移已完成（2026-11-18）；Q1 撤回窗口已定稿（2026-11-18，三条件，preflight 守卫随本任务补齐）；`scripts/merge.sh` / `task merge` 已落地（2026-11-18）；pilot 1/3（code: PR #50；docs 票为本复盘 PR）；待第三票、敏感数据演练、毕业。
+- **毕业产物**：评审协议已毕业（#28，AGENTS + guide）；C6 `pr-meta` 已落地（#27）；`docs/guides/merge.md` 已落地（#33）；ADR-0009 部分取代已闭合（ADR-0011）；`scripts/retract.sh` + `task retract` 已落地（#42）；三 ruleset 迁移已完成（2026-11-18）；Q1 撤回窗口已定稿（2026-11-18，三条件，preflight 守卫随本任务补齐）；`scripts/merge.sh` / `task merge` 已落地（2026-11-18）；pilot 1/3（code: PR #50；docs 票为本复盘 PR（#51））；待第三票、敏感数据演练、毕业。
 - **依赖**：t1 根 Taskfile 已就绪；ruleset 迁移已完成（2026-11-18），作为独立 infra 操作记录于迁移 journal。
 
 ## 被否方案

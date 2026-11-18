@@ -75,7 +75,7 @@ Phase 0 的 PR 号从 #9 跨到 #50，但号段本身不是指标；#45（Q1 撤
 ## 判断
 
 - **merge.sh 已落地，后续合并一律走 `task merge`**；不再把「手动六步」当默认路径。pilot 现在
-  1/3（code #50）；本复盘 PR 合入后是 2/3（docs）。第三票 + 敏感数据桌面演练完成后再谈
+  1/3（code #50）；本复盘 PR（#51）合入后是 2/3（docs）。第三票 + 敏感数据桌面演练完成后再谈
   merge-integrity 毕业。
 - **Phase 1 的硬门仍是 SPEC-0002**：roadmap 的 Phase 1 段落必须毕业为正式 spec，ready 评审
   至少一名非作者核心成员批准。merge-integrity 毕业与 Phase 1 开工可以并行，但不要用「工具
@@ -88,7 +88,7 @@ Phase 0 的 PR 号从 #9 跨到 #50，但号段本身不是指标；#45（Q1 撤
 ## 账目与下一步
 
 - main：`03aeab5`；tag：`v0.1.0`（annotated，tag 对象 `7330e57`）；dev：`792f64f`；无 hotfix。
-- pilot：1/3（code: PR #50，`task merge` 自合并）；本复盘 PR 合入后 2/3（docs）；第三票与
+- pilot：1/3（code: PR #50，`task merge` 自合并）；本复盘 PR（#51）合入后 2/3（docs）；第三票与
   敏感数据桌面演练待做。merge-integrity proposal 仍 `review`。
 - 下一步：Phase 0 复盘 + learning（本 PR）→ pilot 记账 → SPEC-0002 起草/ready 评审 →
   Phase 1；A5 ③ 与 A10 外部 clone 继续跟踪。
