@@ -1,0 +1,19 @@
+# ── LearnFolio 提交消息模板（# 开头的行不会进入提交）────────────────────────
+# 启用：task setup（仅在 commit.template 未设置时写入 .gitmessage）
+#
+# 主题：<type>(<scope>): <做了什么>
+#   type  feat / fix / docs / chore / refactor / test / ci / build / perf / revert
+#   scope web / api / infra / ci / docs / deps（合入 dev/main 的内容必须合规）
+#   feat 分支内的 WIP 可用 wip: 前缀；WIP 不要求可编译
+#
+# 正文：为什么、影响面、验证方式；不写"修复上次的…"
+#
+# 合并消息不在此模板：merge commit 的 subject = PR 标题（六变体见 AGENTS.md
+# 「分支与版本」），由 GitHub 的 Default to PR title 生成，合并界面不得手改。
+#
+# 末尾 trailer 块必须保留并替换为实际值，缺失会被 commit-msg 钩子中止：
+#   agent 参与 → Assisted-by: <harness>:<model>（键表见 AGENTS.md「agent 署名」）
+#   纯人类提交 → Assisted-by: none
+#   提交前互审 → 追加 Reviewed-by: <harness>:<model>（opt-in）
+# 注意：git commit -m 不加载本模板，trailer 仍须手写（钩子会拦缺失）。
+Assisted-by: <harness>:<model>

@@ -5,15 +5,28 @@ vars:
 
 tasks:
   setup:
-    desc: 一条命令安装 Node 依赖与 Go 工具
+    desc: 一条命令安装 Node 依赖、git hooks 与 Go 工具
     cmds:
       - task: setup:node
+      - task: setup:hooks
       - task: setup:go
 
   setup:node:
     desc: 安装 Node 依赖（pnpm install）
     cmds:
       - pnpm install
+
+  setup:hooks:
+    desc: 安装 lefthook git hooks（需先 setup:node），并在未设置时启用 .gitmessage 提交模板
+    cmds:
+      - pnpm exec lefthook install
+      - |
+        if ! git config --get commit.template >/dev/null; then
+          git config --local commit.template .gitmessage
+          echo "commit.template → .gitmessage"
+        else
+          echo "commit.template 已设置（$(git config --get commit.template)），未覆盖"
+        fi
 
   setup:go:
     desc: 下载 Go 模块并安装固定版本 golangci-lint
@@ -60,7 +73,7 @@ tasks:
       - git diff --exit-code -- docs/openapi.yaml
 
   check:catalog:
-    desc: 校验 apps / packages 的直接依赖均走 catalog 或 workspace
+    desc: 校验根 package.json 与 apps / packages 的直接依赖均走 catalog 或 workspace
     cmds:
       - node .github/scripts/check-catalog.mjs
 
