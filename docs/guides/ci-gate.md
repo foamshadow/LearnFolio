@@ -110,7 +110,7 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
 
 **为什么 `Reviewed-by` 只校格式**：它表示“这个 commit 在提交前由另一评审者（agent 或人类）审过整个待提交内容”，是可选声明；多数 commit 没有提交前互审，强制存在会逼出假声明。CI 只防键表 / 拼写漂移，不能证明 reviewer 真的审过（ADR-0011）。
 
-**为什么 push 也要查**（本地钩子 t3 落地后理论上已经拦了一道）：三层答案。其一，`git commit --no-verify` 能绕过任何本地钩子，CI 是唯一绕不过的一层；其二，squash 合入的落地提交根本不经过 PR run——它的 trailer 来自 PR 描述末尾的占位行（描述在 squash 时成为提交正文），只有 push 校验能看到它；其三，checkout 需要 `fetch-depth: 0`（完整历史）才能取到提交区间，浅克隆拿不到。跳过 merge 提交的依据不是"它由平台生成"，而是 merge 提交不注入内容、**结构上无法携带 trailer**（ADR-0004）。
+**为什么 push 也要查**（本地 lefthook 钩子 t3 已落地，理论上已经拦了一道）：三层答案。其一，`git commit --no-verify` 能绕过任何本地钩子，CI 是唯一绕不过的一层；其二，squash 合入的落地提交根本不经过 PR run——它的 trailer 来自 PR 描述末尾的占位行（描述在 squash 时成为提交正文），只有 push 校验能看到它；其三，checkout 需要 `fetch-depth: 0`（完整历史）才能取到提交区间，浅克隆拿不到。跳过 merge 提交的依据不是"它由平台生成"，而是 merge 提交不注入内容、**结构上无法携带 trailer**（ADR-0004）。
 
 ### 补充：PR 描述元数据（pr-meta，C6）
 
@@ -143,7 +143,7 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
   push 是事后发现（设计三）：它验证的是 base 自身，"PR + 新 base"的组合要等合入后才见分晓。dev push 红 = 语义冲突落地。**正确姿势**：绿灯后照常合并，但合并后扫一眼 dev 的 push run；红了立即暂停后续合入，开 `fix/` 修或 `git revert -m 1` 回滚。
 
 - **"本地 `--no-verify` 绕过钩子，没人知道"**
-  本地钩子（t3 起）确实被绕过了，但 CI 逐提交校验（PR 与 push 双场景）是唯一绕不过的一层——缺 trailer 的提交会按 SHA 逐个列出判红。**正确姿势**：trailer 写进提交习惯；补 trailer 用 `git commit --amend`（未推送时）。
+  本地钩子（t3 起已落地）确实被绕过了，但 CI 逐提交校验（PR 与 push 双场景）是唯一绕不过的一层——缺 trailer 的提交会按 SHA 逐个列出判红。`--no-verify` 同时跳过 pre-commit 的 gofmt / Prettier / `bash -n`；其中 web 格式仍会被 `ci:web` 的 `format:check` 补红，Go gofmt 与 shell 语法目前只有本地这一道（golangci-lint 默认 linters 不含 gofmt，也没有 shell 语法 job）。**正确姿势**：trailer 写进提交习惯；补 trailer 用 `git commit --amend`（未推送时）。
 
 - **"改个 PR 标题而已，不用重跑吧"**
   标题是账本行，`edited` 显式在触发列表里——改标题必重跑整个 workflow（有相关改动的 PR 还会重跑 web / api 构建；docs-only 下它们仍 skipped。成本已知且接受，见 ADR-0009 后果节）。**正确姿势**：开 PR 前照模板速查写好标题，减少 edited 重跑。

@@ -32,7 +32,7 @@ related: [SPEC-0001, ADR-0007]
 
 ```text
 fnm use --install-if-missing     # 切到 .nvmrc 指定的 Node
-task setup                       # setup:node + setup:go（第一次 / 依赖变更后）
+task setup                       # setup:node + setup:hooks + setup:go（第一次 / 依赖变更后）
 task dev:web                     # 起 Nuxt（默认 http://localhost:3000）
 task dev:api                     # 起 Go API（默认 http://localhost:8080）
 task ci                          # 提交前的本地 CI 等价物
@@ -49,6 +49,9 @@ fnm（读 .nvmrc）
                       ├─ setup:node
                       │    └─ pnpm install（按 catalog 解析版本）
                       │         └─ apps/web postinstall: nuxt prepare
+                      ├─ setup:hooks
+                      │    ├─ lefthook install（写共享 .git/hooks）
+                      │    └─ commit.template=.gitmessage（未设置时）
                       └─ setup:go
                            ├─ go mod download（apps/api）
                            └─ go install golangci-lint@v2.15.0
@@ -202,7 +205,10 @@ task setup
 `task setup` 是聚合任务，按顺序执行：
 
 1. `setup:node`：`pnpm install`，由 workspace 根安装 `apps/*` 与 `packages/*` 的依赖；`apps/web` 的 `postinstall` 会跑 `nuxt prepare`，生成 `.nuxt/` 下的类型与 ESLint 配置；
-2. `setup:go`：在 `apps/api` 下 `go mod download`，再 `go install` 固定版本 `golangci-lint`（版本来自 `Taskfile.yml` 的 `GOLANGCI_LINT_VERSION`）。
+2. `setup:hooks`：`pnpm exec lefthook install` 安装 `commit-msg` / `pre-commit` 钩子（写入共享的 `.git/hooks`）；若 `commit.template` 尚未设置，则写入 `.gitmessage`（已有设置不覆盖）；
+3. `setup:go`：在 `apps/api` 下 `go mod download`，再 `go install` 固定版本 `golangci-lint`（版本来自 `Taskfile.yml` 的 `GOLANGCI_LINT_VERSION`）。
+
+钩子装好后，每次提交先跑 `pre-commit`（Go `gofmt`、web Prettier、shell `bash -n`，按后缀分流），再由 `commit-msg` 校验末尾的 `Assisted-by` trailer——缺失即中止，不代填。`git commit --no-verify` 可以绕过本地钩子，但 CI 的 attribution job 会逐提交判红，所以 trailer 不能省。`.gitmessage` 只在 `git commit` 打开编辑器时出现；`git commit -m` 不走模板，trailer 仍须手写。
 
 第一次会下载依赖，之后通常很快。如果只做 Web，可以用 `task setup:node` 跳过 Go 工具；如果只改 API，可以用 `task setup:go`。但 A10 的“clone 后一条命令就绪”主路径是 `task setup`。
 
@@ -278,7 +284,7 @@ commit / push 的授权模型见 `AGENTS.md`「破坏性操作」与 [ADR-0007](
 task format
 ```
 
-它只对 `apps/web` 跑 Prettier；编辑器保存时也会先走 Prettier，再由 ESLint 修可自动修复的规则。Go 侧用 `gofmt`；`golangci-lint` 的 formatter 配置暂未启用，提交前至少跑 `gofmt -w`。
+它只对 `apps/web` 跑 Prettier；编辑器保存时也会先走 Prettier，再由 ESLint 修可自动修复的规则。Go 侧用 `gofmt`。两者都已进 `pre-commit`（自动修并 `stage_fixed` 进暂存区），`task format` 现在主要给编辑器之外的批量整理用；`golangci-lint` 的 formatter 配置仍暂未启用。
 
 ### 常用命令速查
 
@@ -286,6 +292,7 @@ task format
 | --- | --- |
 | 第一次、依赖变更后 | `task setup` |
 | 只装 Node 依赖 | `task setup:node` |
+| 只装 git hooks / 提交模板 | `task setup:hooks` |
 | 只装 Go 工具 | `task setup:go` |
 | Web 日常开发 | `task dev:web` |
 | API 日常开发 | `task dev:api` |
@@ -304,6 +311,7 @@ task format
 - `fnm` 的 shell hook 写进 PowerShell `$PROFILE`，否则新终端不会自动切 Node。
 - Go 的 `GOPATH\bin` 也要写进 `$PROFILE` 的 PATH，否则 `task ci` 找不到 `golangci-lint`。
 - 不要用 PowerShell 的 `>` 重定向 `go run ./cmd/api openapi`：`>` 会按字符串重编出 UTF-16，毁掉 `gen:check` 的字节一致性。用 `task gen` 或 `--output`。
+- 钩子里的 shell 语法检查用 `bash -n`。Windows 上需要 Git for Windows 的 `bash` 在 PATH（Git Bash 默认满足）；从 PowerShell 提交若报 `bash: command not found`，改用 Git Bash，或把 Git 的 `usr/bin` 加进 PATH。
 
 ## 为什么这样设计
 
