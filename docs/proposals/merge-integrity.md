@@ -44,7 +44,7 @@ adopted-as: ""
 - **C6 `pr-meta` 已落地**（#27）：PR 描述末行 trailer、正文无评审状态行（含 `Reviewed-by` 行）；并入 `ci-ok`；不查 docs 提交数、不校验评论层 Reviewer（ADR-0011）。
 - **ADR-0010 已 accepted**（#29）：message-only rewrite；docs 单提交撤销；ADR-0005 `deprecated`。
 - **已实现 / 已实测**：`scripts/retract.sh` + `task retract` 已随 #42 落地；三 ruleset 迁移已完成（2026-11-18）；`(#N)` 已实测结案（2026-11-17，#33：显式 subject 逐字落地、不重复追加，见演进记录）。
-- **未实现**：`scripts/merge.sh` / `task merge` 未写；pilot 仍为 0/3。Q1 撤回窗口已定稿（三条件，见开放问题 1）。
+- **已实现 / 未毕业**：`scripts/merge.sh` / `task merge` 已落地（2026-11-18，PR #50）；pilot 仍为 0/3。Q1 撤回窗口已定稿（三条件，见开放问题 1）。
 
 ### 1. 合入前：快照合并（P0，硬保证）
 
@@ -144,7 +144,7 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
   - **RS-3 `dev-main-undeletable`**：`deletion`，无 bypass。删除保护不能挂在 RS-2 上：RS-2 的 owner bypass 会顺带放开删分支，迁移即净弱化。
 - **retract 窗口**：`scripts/retract.sh` 先 `PUT {"enforcement":"disabled"}` 关 RS-1（秒级），force push 后立即恢复 `active`；RS-2 / RS-3 全程 active。窗口内 PR 与 `ci-ok` 同时暂停，窗口外正常。脚本首尾都按 `scripts/rulesets.expected.json` 全字段 verify；恢复失败 exit 99，打印快照路径与手工恢复命令。
 - **审计口径（实测降级）**：evaluation API 对 bypass 推送返回空数组；个人仓库没有 org audit log API。证据链 = `rules/branches/*` 回显 + git server 消息 + web security log（如可见）+ 脚本快照 + journal；**不主张**“平台 bypass 审计”。
-- **`scripts/retract.sh`**：preflight（头部 / 窗口 / 干净树 / origin 同步）→ 备份（本地 + 远端）→ snapshot → disable RS-1 → `reset --hard <bad^>` → `--force-with-lease` + `--force-if-includes` → enable RS-1 → verify → 输出 clone reset 指引。`scripts/merge.sh` 仍未写，合并路径继续按 §1 手动执行。
+- **`scripts/retract.sh`**：preflight（头部 / 窗口 / 干净树 / origin 同步）→ 备份（本地 + 远端）→ snapshot → disable RS-1 → `reset --hard <bad^>` → `--force-with-lease` + `--force-if-includes` → enable RS-1 → verify → 输出 clone reset 指引。`scripts/merge.sh` 已落地（2026-11-18），合并路径由 `task merge` 执行；pilot 尚未完成。
 - 每次恢复后必须验证：RS-1 active 且全字段匹配 expected；RS-2 / RS-3 active。classic protection 已删除，不应重新出现（迁移后由 ruleset 承担）。
 - 当前 `required_approving_review_count=0`；同账号无法 native approve；真独立审批需另一个账号（人类成员），不在本 proposal 首次落地。
 - **收口后**：ADR-0010（#29 accepted）允许 dev/main/tag 的 message-only rewrite；内容 rewrite 不允许；AGENTS“流程冻结线”已同步；main/tag 的 tag 重打、发布通知、备份条件由 ADR-0010 D1 规定。
@@ -165,15 +165,15 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
 1. ~~撤回窗口：24 小时 + 下一任务分支前（取先到）是否过短/过长？还是只按“下一次 push CI 绿之前”？~~ **已定稿（2026-11-18，三条件）**：① `bad` 仍是 `origin/dev` 头部（硬——等价于“下一合入前”，dev 侧有后代即关窗）；② 无任何分支以 `bad` 为祖先（硬——`git for-each-ref --contains` 在 `refs/heads` + `refs/remotes` 中仅允许 `dev` / `origin/dev` / `backup/*`，其余任何 ref 含 bad 即拦，含 main；同机工作树共享对象库、可见暴露全覆盖，异机 clone 由 ③ 兜底；`retract.sh` preflight 已实现）；③ `age ≤ 24h`（`--window-hours` 可调，纯时间代理）。任一不满足 → revert 或 ADR-0010 D1 全量仪式。否决口径：“下一次 push CI 绿之前”过短且语义错（#34 即 CI 全绿的坏账本，push CI 只验构建不验账本）；“下一任务分支前”方向对但切分支中央不可判定，落为条件②的可执行检查。
 2. ~~合规 rewrite：迁 ruleset + bypass actor，还是先用 break-glass 脚本？~~ **已结案（2026-11-18）**：三 ruleset 迁移完成（RS-1 PR+ci 无 bypass / RS-2 force 带 owner bypass / RS-3 deletion 无 bypass），classic protection 已删；`scripts/retract.sh` 走“秒级 disable RS-1 + force + 恢复”。break-glass 不再是日常路径。审计主张按实测降级：个人仓库无 org audit log，evaluation API 对 bypass 推送为空。
 3. ~~`gh pr merge --subject` 的 `(#N)` 行为需实测~~ **已结案（2026-11-17，#33）**：自定义 subject 被平台逐字落地、**不重复追加**；docs 命令保持 `--subject "<标题> (#N)"` 现状；code 路径不显式传 subject（见演进记录）。
-4. ~~`scripts/` 放根目录还是 `tools/`？随 t1 Taskfile 落地，还是单独 infra 任务？~~ **已结案（2026-11-18）**：根 `scripts/`；`scripts/retract.sh` + `task retract` 已随 #42 落地；`scripts/merge.sh` / `task merge` 归后续任务。
+4. ~~`scripts/` 放根目录还是 `tools/`？随 t1 Taskfile 落地，还是单独 infra 任务？~~ **已结案（2026-11-18）**：根 `scripts/`；`scripts/retract.sh` + `task retract` 已随 #42 落地；`scripts/merge.sh` / `task merge` 已随本任务落地（2026-11-18）。
 5. ~~旧 PR 页面标注：只改 title/description，还是另加 journal？~~ **已结案（2026-11-18）**：评论 `superseded by #N` + journal 映射；#34→#36 已实战。
 
 ## 毕业条件
 
-- **pilot**：`scripts/merge.sh` 落地后，至少 3 个 PR（docs 与代码各至少 1 个）用它合并；0 次“PASS 后描述变更导致落地正文不一致”；`(#N)` 行为验证通过。当前 `merge.sh` 未写，pilot 仍 0/3。
+- **pilot**：`scripts/merge.sh` 落地后，至少 3 个 PR（docs 与代码各至少 1 个）用它合并；0 次“PASS 后描述变更导致落地正文不一致”；`(#N)` 行为验证通过。`merge.sh` 已落地；pilot 仍 0/3。
 - **撤回演练**：基本完成（#34→#36，2026-11-17，P2b）：历史干净、保护恢复、旧 PR 标注；ruleset 迁移于 2026-11-18 完成，`retract.sh` 的 production dry-run 通过；clone 通知齐全后闭项。
 - **敏感数据桌面演练**（假密钥）：轮换 + rewrite + 验证；确认 revert 不在流程里。
-- **毕业产物**：评审协议已毕业（#28，AGENTS + guide）；C6 `pr-meta` 已落地（#27）；`docs/guides/merge.md` 已落地（#33）；ADR-0009 部分取代已闭合（ADR-0011）；`scripts/retract.sh` + `task retract` 已落地（#42）；三 ruleset 迁移已完成（2026-11-18）；Q1 撤回窗口已定稿（2026-11-18，三条件，preflight 守卫随本任务补齐）；待做 `scripts/merge.sh` / `task merge`、pilot。
+- **毕业产物**：评审协议已毕业（#28，AGENTS + guide）；C6 `pr-meta` 已落地（#27）；`docs/guides/merge.md` 已落地（#33）；ADR-0009 部分取代已闭合（ADR-0011）；`scripts/retract.sh` + `task retract` 已落地（#42）；三 ruleset 迁移已完成（2026-11-18）；Q1 撤回窗口已定稿（2026-11-18，三条件，preflight 守卫随本任务补齐）；`scripts/merge.sh` / `task merge` 已落地（2026-11-18）；待 pilot、敏感数据演练、毕业。
 - **依赖**：t1 根 Taskfile 已就绪；ruleset 迁移已完成（2026-11-18），作为独立 infra 操作记录于迁移 journal。
 
 ## 被否方案
@@ -194,4 +194,5 @@ PASS 时抓 `title + body` 快照并记 hash；合并时用快照生成 squash �
 - 2026-11-17 P2b 首次实弹（#34 → #36）：#34 按旧 §1 命令显式 `--subject` 合并，subject 缺 ` (#34)`；备份 `b42eee2`、dev reset 至 `94580a8`、旧 PR 标 superseded、#36 以默认标题路径重落 `d071f24`；保护开关与 dev push CI 均核验。§1 的 code 命令已在本条后同步修正。
 - 2026-11-17 t1 收尾对齐：同文“待建”改已落地（#33）；未实现行 / 开放问题 2 / 撤回演练补 P2b 事实；开放问题 5 增实战口径。
 - 2026-11-18 ruleset 迁移与 `retract.sh` 落地（#42）：classic protection 删除；RS-1/2/3 三规则集不对称模型；`scripts/retract.sh` + `task retract` 落地；Q2/Q4/Q5 结案，Q1 保留开放。PUT 最小体 merge 语义、恢复 payload 形状坑、dry-run 局限、B1 删除保护拆分见 journal `2026-11-18-foamshadow-ruleset-migration.md`。
+- 2026-11-18 快照合并脚本落地（PR #50）：`scripts/merge.sh` + `task merge`（PASS target/hash、docs squash 快照 body、code `--no-ff`、合并后落地核验；`task test:merge` fixture）；pilot 自此可开始。
 - 2026-11-18 Q1 定稿（三条件撤回窗口，`fix/infra-retract-window-guard`）：bad 在 dev 头部 + 无分支以 bad 为祖先 + age ≤ 24h；retract preflight 补 `for-each-ref --contains` 守卫（`dev` / `origin/dev` / `backup/*` 白名单，其余含 bad 的 ref 即拦，含 main；同机可见暴露全覆盖，异机 clone 由时间兜底）；同批补 ADR-0007 D5 理由（ADR-0010 撤销其机制前提，规则不变、理由改为真源传播成本）。

@@ -87,10 +87,20 @@ tasks:
     cmds:
       - docker compose --project-directory . --env-file .env -f infra/docker-compose.yml down
 
+  merge:
+    desc: 合并已 PASS 的 PR（快照校验；docs squash / code --no-ff；需人类授权）
+    cmds:
+      - bash scripts/merge.sh {{.CLI_ARGS}}
+
   retract:
     desc: 撤回 dev 头部提交并恢复 PR 门禁（P2b；需人类确认）
     cmds:
       - bash scripts/retract.sh {{.CLI_ARGS}}
+
+  test:merge:
+    desc: 快照合并脚本的 fixture 自测（不触网、不合并）
+    cmds:
+      - bash scripts/tests/merge-snapshot-test.sh
 
   format:
     desc: 用 Prettier 格式化 Web 代码
