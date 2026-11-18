@@ -15,6 +15,8 @@
 #
 # Safety:
 #   - human confirmation is required (interactive prompt unless --yes);
+#   - the three-condition retract window (Q1, decided 2026-11-18) is enforced:
+#     bad at dev head, no other branch based on bad, age within --window-hours;
 #   - backup branch is created locally and on origin before any rewrite;
 #   - force push uses --force-with-lease + --force-if-includes;
 #   - EXIT/INT/TERM trap re-enables RS-1; restore failure exits 99 and prints
@@ -133,6 +135,25 @@ max_age=$((window_hours * 3600))
 ((age <= max_age)) ||
   die "bad commit is ${age}s old, outside the ${window_hours}h retract window"
 
+# Q1 condition 2 of the three-condition window: no branch may have bad as an
+# ancestor. Any branch already based on bad would be orphaned by the reset
+# (visible exposure); allowed referrers are dev itself, origin/dev, and
+# backup/* -- local branches and their pushed remote-tracking refs (earlier
+# runs' backups must survive a retry). Remote HEAD symrefs are aliases of
+# refs checked separately. Anything else -- including main -- closes the
+# window: use revert or the ADR-0010 D1 ritual instead.
+refs_out=$(git for-each-ref --contains="$bad_sha" --format='%(refname)' \
+  refs/heads refs/remotes) ||
+  die "cannot enumerate refs containing $bad_sha"
+guard_refs=$(grep -Ev \
+  '^refs/(heads/dev|remotes/origin/dev)$|^refs/heads/backup/|^refs/remotes/[^/]+/backup/|^refs/remotes/[^/]+/HEAD$' \
+  <<<"$refs_out" || true)
+if [[ -n "$guard_refs" ]]; then
+  die "retract window closed: other refs already contain bad:
+$guard_refs
+rebase the listed branches onto ${base_sha} and retry, or use revert / ADR-0010 D1"
+fi
+
 stamp=$(date +%Y%m%d%H%M%S)
 backup="backup/dev-${bad_sha:0:7}-${stamp}"
 bad_subject=$(git show -s --format=%s "$bad_sha")
@@ -142,6 +163,7 @@ log "  bad:    $bad_sha  ($bad_subject)"
 log "  base:   $base_sha"
 log "  backup: $backup"
 log "  window: ${window_hours}h (age ${age}s)"
+log "  guard:  no other branch contains bad (verified)"
 log "  RS-1:   $PR_GATE_NAME (will be disabled, then re-enabled)"
 log "  RS-2:   $HISTORY_NAME (stays active; owner bypass for force)"
 log "  RS-3:   $UNDELETABLE_NAME (stays active; no bypass)"

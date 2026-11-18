@@ -126,13 +126,16 @@ P2a 与 P2b 的取舍建立在"溯源分两层"的认识上：
 - **文本级溯源** = subject 里的 ` (#N)`，`git log` 能搜到 PR——amend 保留 subject 就保得住这层；
 - **平台级溯源** = 落地提交是某个 PR 的 merge commit，GitHub 页面上 commit ↔ PR 双向点通——**只有 re-land 做得到**，amend 之后旧 PR 页面永远指向旧 SHA。
 
-优先级裁决（proposal §3）：history 美观 + commit 准确 > 平台溯源 > 省号。P2b 多花一个号买回第二层溯源，所以是默认；团队不能 reset 或旧页面可接受时才退到 P2a。旧 PR 标注 `superseded by #N` 留作审计页——标注方式（只改标题/描述，还是另加 journal）是 proposal 开放问题 5，未定稿，结案前按"改标题/描述 + journal 搭车留痕"执行；journal 记区间映射 `A..B → A'..B'` 则是 ADR-0010 D1.3 的既定动作。
+优先级裁决（proposal §3）：history 美观 + commit 准确 > 平台溯源 > 省号。P2b 多花一个号买回第二层溯源，所以是默认；团队不能 reset 或旧页面可接受时才退到 P2a。旧 PR 标注 `superseded by #N` 留作审计页——标注方式已结案（Q5，2026-11-17 #34）：在旧 PR 评论 `Superseded by #N`，并在下一次 journal 记区间映射 `A..B → A'..B'`（ADR-0010 D1.3 的既定动作）。
 
-**撤回窗口**——P2a / P2b 六个条件同时满足才可执行（建议值，开放问题 1 未决，落地前按 proposal 建议值执行并逐条留痕）：
+**撤回窗口**——P2a / P2b 先过三条件窗口（Q1 已定稿，2026-11-18；`retract.sh` preflight 全量校验）：
 
-1. 坏提交在 dev 头部（或其后只有本次修复提交，可一起 rebase）；
-2. 距合入 ≤ 24 小时，且下一个任务分支尚未切出（两者取先到）；
-3. 没有其他成员基于该提交工作；有则先通知并取得同意；
+1. 坏提交在 dev 头部（`origin/dev` 与本地 `HEAD` 都等于 `bad`）；
+2. 除 `dev` / `origin/dev` / `backup/*` 外，无分支以 `bad` 为祖先（`git for-each-ref --contains`，含 main 在内一律拦）；
+3. 距合入 ≤ 24 小时（`--window-hours` 可调）。
+
+窗口之外，P2a / P2b 仍须：
+
 4. 人类所有者明确批准（ADR-0007 授权模型：rewrite 属人类确认项）；
 5. 先建备份分支；推完恢复分支保护，并通知所有 clone 执行 reset；
 6. 在 PR 评论 + 下一次 journal（搭车）留痕，不单独开号。
@@ -176,7 +179,7 @@ RS-2 / RS-3 全程 active；窗口只暂停 PR 与 `ci-ok`，不暂停 force / d
 
 - `scripts/merge.sh` / `task merge` 未写；
 - ~~` (#N)` 自定义 subject 行为未实测~~ 已实测结案（2026-11-17，#33：显式 subject 逐字落地、不重复追加；见 proposal 演进记录）；
-- 撤回窗口正式拍板仍待人类确认（Q1；脚本当前按“bad 在 dev 头部 + age ≤ 24h，`--window-hours` 可调”实现）；
+- ~~撤回窗口正式拍板仍待人类确认~~ 已定稿（Q1，2026-11-18，三条件）：bad 在 dev 头部 + 除 `backup/*` 外无分支以 bad 为祖先 + age ≤ 24h（`--window-hours` 可调），`retract.sh` preflight 全量校验；任一不满足走 revert / ADR-0010 D1；
 - pilot 仍为 0/3：`merge.sh` 未落，尚无 PR 用它合并；
 - 敏感数据桌面演练未做；
 - ~~ruleset 迁移 vs break-glass~~ 已结案（Q2，2026-11-18）：ruleset 三规则集落地，break-glass 仅历史回退；
@@ -200,6 +203,6 @@ proposal 的 pilot 毕业门槛：merge.sh 落地后至少 3 个 PR（docs 与�
 
 - 规则原文：`AGENTS.md`「分支与版本」（合并与同步、三层历史读法、破坏性操作）、「评审协议」、「commit 级评审署名」。
 - 教学层：`review.md`（PASS 与快照的评审侧）、`git-workflow.md`（分支与 PR 方向）、`ci-gate.md`（ci-ok / attribution / pr-meta 的门禁位置）。
-- 设计论证与开放问题真源：`proposals/merge-integrity.md`（Q1 仍开放，Q2/Q3/Q4/Q5 已结案；本指南"现状速览"的对账依据）。
+- 设计论证与开放问题真源：`proposals/merge-integrity.md`（Q1–Q5 已全部结案；本指南"现状速览"的对账依据）。
 - 过程记录：`journal/2026/2026-11-16-foamshadow-pr22-metadata-incident.md`（事故与 force reset 决策）、`2026-11-17-foamshadow-a5-pr-meta-matrix-drift.md`（C6 边界）、`2026-11-18-foamshadow-ruleset-migration.md`（本次迁移与 quirk 清单）。
 - 决策链：ADR-0003（分支与合并机理、backport）、ADR-0005（双轨合入策略）、ADR-0007（操作授权与分级）、ADR-0009（CI 门禁策略——required 只挂 `ci-ok`，"CI 绿 ≠ 可合"误区的出处；C6 相关条款已被 ADR-0011 部分取代）、ADR-0010（历史修复边界：message-only）、ADR-0011（评审署名与 pr-meta 边界）。
