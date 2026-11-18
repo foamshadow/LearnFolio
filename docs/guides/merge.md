@@ -76,7 +76,7 @@ PASS 之后、合并之前的窗口里，PR 描述被追加了评审清单，位
    - 两条命令都带 `--match-head-commit <target>`：PASS 的 target 钉进合并动作，PASS 后 head 变动会被拒绝；
 6. 合并后立刻核对落地提交：`git fetch origin && git log -1 --format="%s%n%b" origin/dev`——subject 与正文逐字对快照。
 
-第 5 步 docs 命令的 ` (#N)` 后缀行为已实测结案（proposal 开放问题 3，2026-11-17 #33 首用）：显式 `--subject "<标题> (#N)"` 被 GitHub 逐字落地、不重复追加，落地 body 与快照逐字节一致。验收标准（dev 上 subject = `标题 (#N)`、body = 快照）已满足；合并后核对落地提交仍是固定动作，只是预期值如今已知。
+第 5 步 docs 命令的 ` (#N)` 后缀行为已实测结案（proposal 开放问题 3，2026-11-17 #33 首用）：显式 `--subject "<标题> (#N)"` 被 GitHub 逐字落地、不重复追加，落地 body 与快照逐字节一致。2026-11-18 #41 补记：GitHub squash 会去掉正文末尾换行；校验按 `rstrip("\n")` 归一化，内容行一致即通过。验收标准（dev 上 subject = `标题 (#N)`、body = 快照）已满足；合并后核对落地提交仍是固定动作，只是预期值如今已知。
 
 code 路径也已由 #36 实弹验证（2026-11-17）：不传 `--subject` / `--body` 时，subject = `标题 (#36)`、正文为空；#34 用显式 `--subject` 导致的缺号事故是本条反例。
 
@@ -141,14 +141,25 @@ P2a 与 P2b 的取舍建立在"溯源分两层"的认识上：
 
 code 路径的特例：merge commit 的 subject 错可 P2a amend；分支提交的 trailer 错 = rebase 分支 + 重建 merge（本质是 P2b）；revert 只用于内容回滚，不修 trailer，也不要把 docs 的 body 快照套过来。
 
-### 合规 rewrite 为什么不用"临时关保护"
+### 合规 rewrite：ruleset 窗口（2026-11-18 起）
 
-dev 开着 force push 禁令，合规 rewrite 需要"合法地 force 一次"。两条路（开放问题 2 未决）：
+dev / main 的 classic branch protection 已迁到三条 ruleset：
 
-- **ruleset + bypass actor（推荐）**：把 dev 保护迁到 ruleset，给 owner / 发布经理配 bypass——撤回时合法 force，审计可见，一劳永逸；代价是迁移仓库保护配置本身要小心。
-- **break-glass 脚本（备选）**：临时关 PR / status 检查 + 开 force，推完自动恢复并打印审计行。#22 当时的手工版容易漏恢复保护。
+- **RS-1 `dev-main-pr-gate`**：require PR + required `ci-ok`，无 bypass；直推和 force 都被拦。
+- **RS-2 `dev-main-history`**：`non_fast_forward`，仓库 admin 角色（`actor_id: 5`，`RepositoryRole`，`bypass_mode: always`）可 force。它只服务 P2b 的 force push，单独时是惰性的——RS-1 仍会拦。
+- **RS-3 `dev-main-undeletable`**：`deletion`，无 bypass。删除保护不能挂在 RS-2 上：owner bypass 会顺带放开删分支，迁移即净弱化。
 
-未来 `scripts/retract.sh <sha>` 的职责链：检查头部 / 窗口 / 备份 → bypass → `rebase --onto` 或 `reset` → `--force-with-lease`（带租约的 force：远端若被别人先推了新提交会拒绝，防覆盖他人工作）→ 恢复保护 → 输出需要 reset 的 clone 列表。每次恢复后必须核验四项：`allow_force_pushes=false`、required `ci-ok` 在位、`enforce_admins=true`、dismiss stale reviews 开着。
+P2b 的窗口由 `scripts/retract.sh` 控制：
+
+```text
+preflight → 备份本地+远端 → snapshot → disable RS-1（enforcement=disabled，秒级）
+→ reset --hard <bad^> → --force-with-lease + --force-if-includes
+→ enable RS-1 → 全字段 verify
+```
+
+RS-2 / RS-3 全程 active；窗口只暂停 PR 与 `ci-ok`，不暂停 force / deletion 保护。恢复失败 exit 99，打印快照路径与手工恢复命令；`task retract` 是统一入口。
+
+审计口径：个人仓库没有 org audit log；evaluation API 对 bypass 推送返回空数组。证据链 = `rules/branches/*` 回显 + git server 消息 + web security log（如可见）+ 脚本快照 + journal；不主张“平台 bypass 审计”。break-glass 仅作为历史回退（#34→#36 手工版），不再是日常路径。
 
 ### 现状速览：哪些已落地，哪些还没有
 
@@ -157,18 +168,22 @@ dev 开着 force push 禁令，合规 rewrite 需要"合法地 force 一次"。�
 - 评审协议（PASS / target / body-sha256 / PASS 后冻结）——#28 毕业，真源 AGENTS「评审协议」+ `review.md`；
 - `pr-meta`（C6）PR 描述校验——#27，`ci-gate.md` 有它在门禁里的位置；
 - message-only rewrite 的边界——ADR-0010（accepted）；docs 单提交约束已撤销（ADR-0005 deprecated）；
-- 评审署名双轨（评论层 `Reviewer` / commit 层 `Reviewed-by`）——ADR-0011。
+- 评审署名双轨（评论层 `Reviewer` / commit 层 `Reviewed-by`）——ADR-0011；
+- ruleset 迁移（2026-11-18）：RS-1 / RS-2 / RS-3 active，classic dev/main protection 已删除；
+- `scripts/retract.sh` + `task retract`（#42）——P2b 的 reset / force / 恢复链自动化，production dry-run 已通过。
 
 未落地、执行到对应步骤时按上文手动流程 + 逐条留痕的（全部出自 proposal 毕业条件与开放问题）：
 
-- `scripts/merge.sh` / `retract.sh` 未写；
+- `scripts/merge.sh` / `task merge` 未写；
 - ~~` (#N)` 自定义 subject 行为未实测~~ 已实测结案（2026-11-17，#33：显式 subject 逐字落地、不重复追加；见 proposal 演进记录）；
-- 撤回窗口长度未定稿（开放问题 1；当前按建议值：24h + 下一任务分支前取先到）；
-- ruleset 迁移 vs break-glass 未决（开放问题 2），迁移作为单独 infra 任务；break-glass 已有手工实战（2026-11-17 #34→#36，整 payload PUT）；
-- 脚本落位（根目录还是 `tools/`）与 `task merge` / `task retract` 封装待决策（开放问题 4；t1 根 Taskfile 已就绪）；
-- ~~旧 PR 页面的标注方式未定~~ 已有实战口径（开放问题 5，2026-11-17 #34：评论 Superseded by #36 + journal 映射；见上文 P2a / P2b 段）。
+- 撤回窗口正式拍板仍待人类确认（Q1；脚本当前按“bad 在 dev 头部 + age ≤ 24h，`--window-hours` 可调”实现）；
+- pilot 仍为 0/3：`merge.sh` 未落，尚无 PR 用它合并；
+- 敏感数据桌面演练未做；
+- ~~ruleset 迁移 vs break-glass~~ 已结案（Q2，2026-11-18）：ruleset 三规则集落地，break-glass 仅历史回退；
+- ~~脚本落位与 `task merge` / `task retract`~~ 已结案（Q4，2026-11-18）：根 `scripts/`；`retract.sh` + `task retract` 已落，`merge.sh` / `task merge` 后续；
+- ~~旧 PR 页面的标注方式未定~~ 已有实战口径（Q5，2026-11-17 #34：评论 Superseded by #36 + journal 映射；见上文 P2a / P2b 段）。
 
-proposal 的 pilot 毕业门槛：merge.sh 落地后至少 3 个 PR（docs 与代码各 ≥1）用它合并、0 次"PASS 后描述变更导致落地正文不一致"、` (#N)` 验证通过；外加一次撤回演练与一次敏感数据桌面演练。在此之前，本指南的手动流程就是现行做法。
+proposal 的 pilot 毕业门槛：merge.sh 落地后至少 3 个 PR（docs 与代码各 ≥1）用它合并、0 次"PASS 后描述变更导致落地正文不一致"、` (#N)` 验证通过；外加一次撤回演练与一次敏感数据桌面演练。`retract.sh` 已落地并通过 production dry-run，但 pilot 仍未开始；在此之前，本指南的手动合并流程仍是现行做法。
 
 ## 常见误区
 
@@ -185,6 +200,6 @@ proposal 的 pilot 毕业门槛：merge.sh 落地后至少 3 个 PR（docs 与�
 
 - 规则原文：`AGENTS.md`「分支与版本」（合并与同步、三层历史读法、破坏性操作）、「评审协议」、「commit 级评审署名」。
 - 教学层：`review.md`（PASS 与快照的评审侧）、`git-workflow.md`（分支与 PR 方向）、`ci-gate.md`（ci-ok / attribution / pr-meta 的门禁位置）。
-- 设计论证与开放问题真源：`proposals/merge-integrity.md`（含毕业条件与五个开放问题，本指南"现状速览"的对账依据）。
-- 过程记录：`journal/2026/2026-11-16-foamshadow-pr22-metadata-incident.md`（事故与 force reset 决策）、`2026-11-17-foamshadow-a5-pr-meta-matrix-drift.md`（C6 边界）。
+- 设计论证与开放问题真源：`proposals/merge-integrity.md`（Q1 仍开放，Q2/Q3/Q4/Q5 已结案；本指南"现状速览"的对账依据）。
+- 过程记录：`journal/2026/2026-11-16-foamshadow-pr22-metadata-incident.md`（事故与 force reset 决策）、`2026-11-17-foamshadow-a5-pr-meta-matrix-drift.md`（C6 边界）、`2026-11-18-foamshadow-ruleset-migration.md`（本次迁移与 quirk 清单）。
 - 决策链：ADR-0003（分支与合并机理、backport）、ADR-0005（双轨合入策略）、ADR-0007（操作授权与分级）、ADR-0009（CI 门禁策略——required 只挂 `ci-ok`，"CI 绿 ≠ 可合"误区的出处；C6 相关条款已被 ADR-0011 部分取代）、ADR-0010（历史修复边界：message-only）、ADR-0011（评审署名与 pr-meta 边界）。
