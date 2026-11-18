@@ -91,6 +91,32 @@ Phase 0 的 PR 号从 #9 跨到 #50，但号段本身不是指标；#45（Q1 撤
 - 下一步：Phase 0 复盘 + learning（本 PR）→ pilot 记账 → SPEC-0002 起草/ready 评审 →
   Phase 1；A5 ③ 与 A10 外部 clone 继续跟踪。
 
+## Pi 视角补充（评审者记忆）
+
+DSH 初稿记的是实现侧；以下补评审侧的四段记忆，都是 Phase 1 还会复用的。
+
+### 审查锚点：从单锚点到双锚点
+
+#42 的 B1 修复复审时，实现者报告的 diff-sha256 与评审者复算不一致（实测 `1fa3de91…` ≠ 声称的 `73fe66dd…`）——tree 哈希逐位一致、diff 哈希却对不上，说明两者口径不同源。结论：**tree 哈希（git 自身的内容寻址）是唯一权威锚点，diff-sha256 只是便利校验和**，且必须约定生成命令（`git diff --cached | sha256sum`）。#43 起改双锚点（tree + diff-sha256 同报同核），此后未再出现口径漂移；PR 级审查同样以「PR head 的树 = commit 级 `Reviewed-by` 覆盖的树」逐位比对收口。评审覆盖的可审计延伸靠 git 对象寻址，不是信任口头声明。
+
+### 「比现状弱」的迁移审查框架
+
+#42 首轮 B1：第一版把 `deletion` 挂在带 owner bypass 的 RS-2 上——分支删除不走 push 路径、RS-1 拦不住，管理员平时就能删 dev/main，**相对 classic（`allow_deletions=false` + `enforce_admins`）是净弱化**。规则迁移类审查的通用问题不是「新方案是否可行」，而是「新方案相对被取代方案的每个维度是否都不弱」。修法（拆 RS-3、无 bypass、`retract.sh` 永不触碰）让删除保护比 classic 更强：owner 也删不了。
+
+### 角色反转与 Q1 三条件的概念拆分（#45）
+
+Q1 三条件落地时 Pi 写代码、DSH 审查——互审约束（reviewer ≠ Assisted-by 参与者）首次在两个方向都得到验证。三条件也不是一次想清的：先发现已实现的「HEAD + 24h」里时间只是不可见扩散的代理，再把原提案「下一任务分支前」从不可执行的意图落成 `for-each-ref --contains` 的可执行检查（同机工作树共享对象库 = 可见暴露全覆盖；异机 clone 由时间兑底）。前置的概念拆分——**RS-1 禁用窗口（秒级）/ 撤回资格窗口（Q1 本体）/ re-land 无窗口**——避免了把三个不同的「窗口」混进一个决策。
+
+### 评审时点与 `Reviewed-by` 的边界（#50）
+
+merge.sh 的两个提交在开 PR 前受了审，但提交已存在——按协议「提交后才发生的审查不回头改旧 commit」，两个提交不带 `Reviewed-by`，评审责任整体转移到 PR 级 PASS。实践结论：**想拿 commit 级互审署名，评审必须发生在 commit 生成前（staged tree 快照）；PR 级 PASS 是兜底，不是替代**。#44 的「4 棵暂存树逐棵审」是正例，#50 是反例教材。
+
+另一条复利链：#43 复审时对 #41 尾换行做了字节级验证（PR body 1008 字节、落地 1007、`rstrip("\n")` 后逐字节一致）→ 归一化口径写入 guide → #50 的 merge.sh 落地核验直接实现该归一化（两边命令替换天然去尾换行）。一次较真的验证，三个 PR 后变成工具的一行正确性。
+
+### 现场反证一则：worktree 里钩子是能跑的
+
+本补充提交在 `.worktrees/phase0-retrospective` 内完成，lefthook 的 `pre-commit`（按后缀分流，本提交无匹配文件全部 skip）与 `commit-msg`（`assisted-by` 校验通过）**两个钩子都真实执行**。初稿「worktree 里 lefthook 不在 PATH，本地 commit 钩子实际没跑」应精确为**特定会话的 PATH 问题**，不是 worktree 的结构性缺陷（t3 的转发器回落机制本就为此设计）；下次遇到应在该会话内 `task setup:hooks` 复装验证，而不是归因于 worktree。
+
 ## 参考
 
 - `docs/specs/0001-phase-0-scaffold.md`（A1–A10、变更记录）
