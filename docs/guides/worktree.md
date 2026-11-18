@@ -114,7 +114,7 @@ git worktree unlock .worktrees/guides-first-batch
 
 3. **落后基线**：工作树是独立检出，**不会跟着主工作树或远端自动更新**。昨天切的分支，今天 dev 已经前进了三格。开 PR 前在**本工作树内** `git fetch origin && git rebase dev`；绝不进别人的工作树代为 rebase（纪律见下节）。
 
-4. **hooks 共享**：t3 lefthook 落地后，钩子装在共享的 `.git/hooks`——任何工作树里的提交都会跑同一套钩子。写钩子脚本时路径必须按仓库根解析，否则在附加工作树里会找不到文件（脚本拿到的工作目录是那棵树的根，不是主树根）。
+4. **hooks 共享**：lefthook 已落地（t3），钩子装在共享的 `.git/hooks`——任何工作树里的提交都会跑同一套钩子。`lefthook install` 生成的转发器会嵌一个安装时解析到的二进制绝对路径；该路径失效时回落到 `$(git rev-parse --show-toplevel)/node_modules`。所以任务工作树里 `pnpm install` 后跑一次 `task setup:hooks`；移除工作树后若主工作树提交报 "Can't find lefthook in PATH"，在主工作树重跑 `task setup:hooks` 即可。job 的 `root:` 按**当前提交所在的树**解析（脚本拿到的工作目录是那棵树的根），脚本路径一律按仓库根写。
 
 5. **清理顺序**：先 `git worktree remove`（有未提交改动时它会拒绝——先确认丢弃或提交），再删本地分支。squash 合入后 `git branch -d` 会因"找不到合并证据"拒绝（SHA 被重写，git-workflow.md 第 5 步讲过），按 journal 先例用 `-D`。**别人的活跃工作树不要 `--force`、不要 `prune`。**
 

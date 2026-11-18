@@ -7,11 +7,15 @@ set -euo pipefail
 
 : "${GITHUB_EVENT_PATH:?GITHUB_EVENT_PATH 未设置}"
 
+# 正则单一源：scripts/lib/attribution.sh（与 commit-msg / check-attribution 共用）
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=../../scripts/lib/attribution.sh
+source "$script_dir/../../scripts/lib/attribution.sh"
+
 body=$(jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH")
 last=$(printf '%s\n' "$body" | awk 'NF{last=$0} END{print last}')
-regex='^Assisted-by: (none|[A-Za-z][A-Za-z0-9]*:[a-z0-9][a-z0-9.-]*)$'
 
-if ! [[ "$last" =~ $regex ]]; then
+if ! [[ "$last" =~ $assisted_regex ]]; then
   echo "::error::PR 描述最后一行不是合法 Assisted-by trailer（实际：${last:-<空>}）"
   exit 1
 fi

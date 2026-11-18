@@ -4,8 +4,11 @@
 set -euo pipefail
 
 : "${EVENT:?EVENT 未设置}"
-assisted_regex='^Assisted-by: (none|[A-Za-z][A-Za-z0-9]*:[a-z0-9][a-z0-9.-]*)$'
-reviewed_regex='^Reviewed-by: (none|[A-Za-z][A-Za-z0-9]*:[a-z0-9][a-z0-9.-]*)$'
+
+# 正则单一源：scripts/lib/attribution.sh（commit-msg 钩子与 CI 脚本共用，防多处漂移）
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=../../scripts/lib/attribution.sh
+source "$script_dir/../../scripts/lib/attribution.sh"
 
 if [[ "$EVENT" == "pull_request" ]]; then
   : "${BASE_SHA:?BASE_SHA 未设置}"

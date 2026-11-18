@@ -4,7 +4,7 @@
 修改本文件必须走 PR（见"规范变更"）。
 
 > 渐进补入：本初版只含建仓即生效的规则。t2 已补"Go 分层纪律 / 契约与生成物 / 工具版本"；
-> t3 补提交纪律的 lefthook 配置行（路线见 SPEC-0001 任务分解的随带交付列）。
+> t3 已补提交纪律的 lefthook 配置行（钩子实现见 `lefthook.yml` 与 `scripts/hooks/commit-msg.sh`）。
 
 ## 仓库身份
 
@@ -148,7 +148,8 @@ proposals/agent-confirmation-chain，毕业后取代本条）：
   commit / rebase / checkout / 删除分支；`git gc --prune=now`、修改 hooks 或仓库级 config 前先确认无其他
   活跃工作树；fetch 与只读命令可并行
 - 运行态隔离：不同工作树可同时起 dev server / 数据库，端口与 `.env` 本地错开（`.env` 不入库）；
-  共享的只有 git 对象与 hooks（t3 lefthook 落地后需验证 hook 内的 root 路径）
+  共享的只有 git 对象与 hooks（lefthook 已落地：钩子装在共享 `.git/hooks`，job 的 `root:`
+  按当前工作树解析；`task setup:hooks` 从任一工作树执行都会更新同一套钩子）
 - 授权：auto-commit / auto-push 按工作树各自申请、不跨工作树继承（ADR-0007）；一个工作树的 agent
   不得代另一个提交或推送
 - 分支七类命名与方向规则不变；工作树不改变 `feat/*` 等分支的创建与 PR 方向
@@ -178,6 +179,13 @@ proposals/agent-confirmation-chain，毕业后取代本条）：
 - 合并权限：3 名核心成员拥有 spec 评审权与收口合并权；非核心成员提 PR 由核心审
 - 新增依赖（Go module 与 npm 包）：PR 描述声明其许可证——MIT/Apache/BSD 可入，
   GPL 系评估传染，无许可证禁入
+- 本地钩子（t3 起，lefthook）：`task setup` 安装并启用 `.gitmessage`；`commit-msg` fail-closed
+  校验 trailer（不代填；`--no-verify` 可绕过，由 CI 补位）；`pre-commit` 按后缀分流
+  （Go `gofmt`、web `prettier`、shell `bash -n`）
+- lefthook 配置纪律：修复类 job 必须 `stage_fixed: true`（否则格式化结果留在工作区、不进本次
+  提交）；需要子目录 CWD 的 job 写 `root:`（如 `root: apps/api`），pre-commit **不得**写
+  `root: "."`（会清空文件集、job 直接 skip，v2.2.2 实测）；`commit-msg` 的 `root: "."`
+  只改 CWD，安全
 
 ### agent 署名（`Assisted-by`，opt-out）
 
@@ -194,7 +202,7 @@ proposals/agent-confirmation-chain，毕业后取代本条）：
 - `author` / `committer` 恒为人类；来源是**声明（claim）非证明（proof）**，不得用于归责或能力认定
 - 身份来源：agent 自述 + 配置查证（harness model 配置 > 系统提示 model id > 自省命令）；信源冲突或
   精确不到版本粒度时**问人，不猜**
-- 强制两层：t3 `commit-msg` 钩子 fail-closed（缺 trailer 即中止，**不代填**——静默补 `none` 会把 agent
+- 强制两层：`commit-msg` 钩子（t3 落地）fail-closed（缺 trailer 即中止，**不代填**——静默补 `none` 会把 agent
   提交误标为人类提交）；t0 CI 逐提交正则校验（唯一能挡 `--no-verify` 的一层）；PR 描述同列该串（与 trailer 互补）
 - 校验正则：`^Assisted-by: (none|[A-Za-z][A-Za-z0-9]*:[a-z0-9][a-z0-9.-]*)$`；决策理由见 ADR-0004
 
@@ -246,11 +254,17 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
 | apps/api/**/*.go | `cd apps/api && go build ./... && go test ./... && golangci-lint run ./...` |
 | apps/api 的 handler / DTO / ent schema | 追加 `task gen && task gen:check` |
 | apps/web/**/*.{ts,vue} | `pnpm --filter @learnfolio/web lint && pnpm --filter @learnfolio/web typecheck` |
+| lefthook.yml / scripts/hooks/** / scripts/lib/attribution.sh / .github/scripts/check-{attribution,pr-meta}.sh | `pnpm exec lefthook validate`；好 / 坏 trailer 双路径；`--no-verify` 后跑 CI 脚本验证补位 |
 | 任何改动 | 提交前 `task ci`（CI 管线本地等价物，全绿才推） |
 
 - 生成物报错时禁止改生成物：回源头（Go struct / ent schema）改，再 task gen
 - 禁止跨 app import：apps/web 不引用 apps/api 的任何文件，唯一通道是生成的 schema.ts
 - 新增 Node 依赖一律走 pnpm-workspace.yaml 的 catalog:，不在 app 的 package.json 写死版本
+- 钩子改动必须实测：带合法 trailer 的提交成功；缺 trailer 的提交被 `commit-msg` 中止；
+  `--no-verify` 绕过后的补位用 `EVENT=push BEFORE=<parent> AFTER=<head> bash .github/scripts/check-attribution.sh`
+  本地复跑验证（与 CI 同脚本、同正则源）
+- `check-pr-meta.sh` 改动用合成 `GITHUB_EVENT_PATH` 跑 good / missing 两路径（末行 trailer
+  合法 / 缺失）；它只校验 PR 描述，不能用 push 区间测试替代
 
 ## Go 分层纪律
 
@@ -276,6 +290,8 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
 - 生成器 CLI（ent codegen / atlas）用 go.mod 的 tool 指令锁定（Go 1.24+，Phase 2 首个工具落地时启用）；禁止 CI 中 go install ...@latest
 - golangci-lint 版本单一源：Taskfile var；CI 与 task setup 共同消费同一数字（t2 的 CI 直接调 task setup:go；不进 go tool，避免污染 module graph；.golangci.yml 顶层 version 键兜底防 v1/v2 跨界）
 - Node / pnpm 版本由 packageManager 字段与 .nvmrc 锁定
+- lefthook / Prettier 版本由 `pnpm-workspace.yaml` 的 catalog 锁定；根 `package.json` 只写
+  `catalog:`，`task check:catalog` 同时校验根与 apps / packages
 
 ## TODO 注释规范
 

@@ -1,0 +1,34 @@
+# git hooks 统一由 lefthook 管理（SPEC-0001-A6 / ADR-0004）。
+#
+# root 语义（v2.2.2 实测）：
+#   - commit-msg：root "." 只改 CWD，让脚本与消息路径按仓库根解析；没有文件集可过滤。
+#   - pre-commit：root 会同时过滤文件集，只能指向真实子目录（如 apps/api）；
+#     root "." 会把所有 staged 文件滤光，job 直接 skip——不要写。
+#   - 修复类 job 必须 stage_fixed: true，否则格式化的结果留在工作区、不进本次提交。
+#
+# glob_matcher: doublestar 让 ** 匹配零层或多层目录（web 根级配置也纳入）。
+glob_matcher: doublestar
+
+pre-commit:
+  jobs:
+    # 检查类在前：语法失败时不再改文件，避免在注定失败的提交上动 index。
+    - name: shell-syntax
+      glob: "**/*.sh"
+      run: bash -n {staged_files}
+
+    - name: gofmt
+      root: apps/api
+      glob: "**/*.go"
+      stage_fixed: true
+      run: gofmt -w {staged_files}
+
+    - name: prettier
+      glob: "apps/web/**/*.{ts,vue,js,mjs,cjs,json}"
+      stage_fixed: true
+      run: pnpm exec prettier --write {staged_files}
+
+commit-msg:
+  jobs:
+    - name: assisted-by
+      root: "."
+      run: bash scripts/hooks/commit-msg.sh {1}

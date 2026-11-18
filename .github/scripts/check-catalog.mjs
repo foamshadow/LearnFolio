@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// 根 package.json 暂豁免；t3 随 lefthook 纳入（终态 PR 描述已记）
+// 校验范围：根 package.json + apps/* 与 packages/* 的 package.json
+// 根依赖（lefthook / prettier 等工具）同样受 catalog: 单一真源约束
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -45,9 +46,11 @@ for (const root of ROOTS) {
   }
 }
 
+if (existsSync('package.json')) checkPackage('package.json')
+
 if (errors.length > 0) {
   for (const error of errors) console.error(`::error::${error}`)
   process.exit(1)
 }
 
-console.log('catalog 校验通过：apps / packages 的直接依赖均使用 catalog: 或 workspace:')
+console.log('catalog 校验通过：根 package.json 与 apps / packages 的直接依赖均使用 catalog: 或 workspace:')
