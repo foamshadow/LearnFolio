@@ -77,6 +77,16 @@ tasks:
     cmds:
       - node .github/scripts/check-catalog.mjs
 
+  db:up:
+    desc: 启动本地依赖服务（PG；前置：根 .env 存在——cp .env.example .env）
+    cmds:
+      - docker compose --project-directory . --env-file .env -f infra/docker-compose.yml up -d
+
+  db:down:
+    desc: 停止本地依赖服务（数据保留在命名卷；删卷用 down -v，慎用）
+    cmds:
+      - docker compose --project-directory . --env-file .env -f infra/docker-compose.yml down
+
   retract:
     desc: 撤回 dev 头部提交并恢复 PR 门禁（P2b；需人类确认）
     cmds:

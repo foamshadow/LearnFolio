@@ -1,0 +1,49 @@
+# LearnFolio 本地依赖服务（SPEC-0001-A8）。
+#
+# 唯一入口是根 Taskfile 的 task db:up / task db:down（封装固定参数，
+# compose 文件在 infra/ 下，从仓库根裸跑 docker compose 找不到配置）。
+# 手动查状态用同参数的 ps 子命令（见 docs/guides/onboarding.md 第 9 步）。
+#
+# project 名取 --project-directory 的目录 basename：主树与各任务工作树
+# 天然是不同 project（容器、数据卷互不共享），端口经根 .env 的
+# POSTGRES_PORT 错开——对应 AGENTS 多工作树"端口与 .env 本地错开"纪律。
+services:
+  postgres:
+    # pin 具体 minor：PG 跨大版本数据目录不兼容，pull 后行为不得漂移；
+    # 选型依据与升级流程见 SPEC-0001 变更记录 2026-11-18 t6 开工批注。
+    image: postgres:17.12
+    # 不写 container_name：固定容器名会跨 project 冲突，让 compose 按
+    # <project>-<service> 自动派生。
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-learnfolio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-learnfolio}
+      POSTGRES_DB: ${POSTGRES_DB:-learnfolio}
+    ports:
+      # 宿主侧端口可配（.env 错开多实例/多工作树），容器内恒 5432。
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # $${...} 让 compose 原样传给容器内 shell：健康检查读容器环境变量，
+      # 不依赖 .env 是否与建库时的值一致（改 .env 不重建容器也不误报）。
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Redis：Phase 2+ 启用（届时取消本段注释，并在根 .env 同批启用 REDIS_ADDR）。
+  # 镜像版本与端口变量按 Phase 2 契约需求另定，勿照抄注释直接启用。
+  # redis:
+  #   image: redis:<Phase 2 定>
+  #   ports:
+  #     - "${REDIS_PORT:-6379}:6379"
+  #   volumes:
+  #     - redisdata:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 10
+
+volumes:
+  pgdata:
