@@ -188,7 +188,7 @@ RS-2 / RS-3 全程 active；窗口只暂停 PR 与 `ci-ok`，不暂停 force / d
 - 评审署名双轨（评论层 `Reviewer` / commit 层 `Reviewed-by`）——ADR-0011；
 - ruleset 迁移（2026-11-18）：RS-1 / RS-2 / RS-3 active，classic dev/main protection 已删除；
 - `scripts/retract.sh` + `task retract`（#42）——P2b 的 reset / force / 恢复链自动化，production dry-run 已通过；
-- `scripts/merge.sh` + `task merge`（2026-11-18）——P0 快照合并：PASS target/hash 校验、docs squash + 快照 body、code `--no-ff`、合并后落地核验；`task test:merge` fixture 自测。
+- `scripts/merge.sh` + `task merge`（2026-11-18，PR #50）——P0 快照合并：PASS target/hash 校验、docs squash + 快照 body、code `--no-ff`、合并后落地核验；`task test:merge` fixture 自测。
 
 未落地、执行到对应步骤时按上文手动流程 + 逐条留痕的（全部出自 proposal 毕业条件与开放问题）：
 
