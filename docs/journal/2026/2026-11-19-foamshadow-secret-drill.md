@@ -25,7 +25,7 @@ related: [ADR-0010, docs/proposals/merge-integrity.md, docs/guides/merge.md, "do
 | 06:01:06 | **T0：合并 #53（`gh pr merge --merge`）**，bad = `80a691f` 落 dev head |
 | 06:02:12 | `retract.sh --bad 80a691f --yes`：备份 → 快照 → 禁 RS-1 → reset + lease force-push → 恢复 RS-1 |
 | 06:03:06 | retract 完成（全程 54s，退出码 0） |
-| 06:04+ | 五项独立验证全绿；备份分支删除（真实事件口径：备份 ref 属清理对象） |
+| 06:04+ | 八项独立验证全绿（清单见下节）；备份分支删除（真实事件口径：备份 ref 属清理对象） |
 
 ## retract.sh 生产实弹读数
 
@@ -45,11 +45,11 @@ related: [ADR-0010, docs/proposals/merge-integrity.md, docs/guides/merge.md, "do
 | 1 | `git log -S 'sk-drill-0000' origin/dev --oneline` | 空——dev 可达历史无假钥 |
 | 2 | `git rev-parse origin/dev` | `5b6185b…`——还原至泄漏前位置 |
 | 3 | `ls infra/drill-fake-credential.txt` | No such file——工作树无载荷 |
-| 4 | `git log -S 'sk-drill-0000' backup/dev-80a691f-20261119140212 --oneline` | `6b731e9`——备份 ref 持钥（预期，发现 3） |
-| 5 | `gh api repos/…/rulesets/27526062 --jq .enforcement` | `active`——RS-1 已恢复 |
+| 4 | `git log -S 'sk-drill-0000' 80a691f --oneline`（bad 对象仍在库；备份 ref 原指向 bad，原命令执行于备份删除前） | `6b731e9`——备份线持钥（预期，发现 3） |
+| 5 | `gh api repos/foamshadow/LearnFolio/rulesets/27526062 --jq .enforcement` | `active`——RS-1 已恢复 |
 | 6 | `gh run list --branch dev` | run `44469325670` push success @ `5b6185b` |
 | 7 | `gh pr view 53 --json state,mergedAt` | MERGED @ `06:01:09Z`（T0+3s） |
-| 8 | `gh api repos/…/commits/80a691f…` | SHA 可达——平台侧发现（发现 4） |
+| 8 | `gh api repos/foamshadow/LearnFolio/commits/80a691f6922be27de4abc33930a08bd74db959ea --jq .sha` | 返回完整 SHA——对象仍可达（平台侧发现 4） |
 
 ## 发现项（按严重度）
 
