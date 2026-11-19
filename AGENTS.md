@@ -84,12 +84,12 @@
   ADR-0003）**：从 dev 切 backport/<短名>，`git merge <hotfix tag>`，PR 回 dev
 - dev 的 push CI 红 = 语义冲突落地：开 fix/ 修复，或 `git revert -m 1` 回滚
   （被 revert 的任务重合入不带回内容，须 revert 那个 revert）
-- **远端重写对齐**（撤回 / retract 之后）：`git pull --ff-only` 失败、status 报 diverged、
-  push 被非 fast-forward 拒绝，且已知 dev 被重写时——按撤回输出执行
-  `git fetch origin && git reset --hard origin/dev`；本地 dev 应为纯跟踪分支，reset 前以
-  `git status` 确认无未推提交，有则先建 `backup/dev-<时间戳>`；agent 会话遇此状况主动
-  提示人类并对齐（clone 通知的 agent 侧机制，2026-11-19 敏感数据演练闭项决策，
-  见 proposal merge-integrity 毕业记录）
+- **远端重写对齐**（撤回 / retract 之后，ADR-0012）：`git pull --ff-only` 失败、status 报
+  diverged、push 被非 fast-forward 拒绝，且已知 dev 被重写时——先查 `backup/*` 的对齐提示，
+  经**人类确认**后执行 `git fetch origin && git reset --hard origin/dev`；前置自检：
+  `git log origin/dev..HEAD` 为空（无未推提交）且工作树干净，不满足则先建
+  `backup/dev-<时间戳>`；agent 会话遇此状况主动提示人类并对齐（clone 通知机制的
+  agent 侧组件，2026-11-19 演练闭项决策）
 
 版本号与 tag：
 

@@ -190,7 +190,7 @@ RS-2 / RS-3 全程 active；窗口只暂停 PR 与 `ci-ok`，不暂停 force / d
 - `scripts/retract.sh` + `task retract`（#42）——P2b 的 reset / force / 恢复链自动化，production dry-run 已通过；
 - `scripts/merge.sh` + `task merge`（2026-11-18，PR #50）——P0 快照合并：PASS target/hash 校验、docs squash + 快照 body、code `--no-ff`、合并后落地核验；`task test:merge` fixture 自测。
 
-未落地、执行到对应步骤时按上文手动流程 + 逐条留痕的（全部出自 proposal 毕业条件与开放问题）：
+毕业清单（全部结案，2026-11-19；条目出自 proposal 毕业条件与开放问题）：
 
 - ~~` (#N)` 自定义 subject 行为未实测~~ 已实测结案（2026-11-17，#33：显式 subject 逐字落地、不重复追加；见 proposal 演进记录）；
 - ~~撤回窗口正式拍板仍待人类确认~~ 已定稿（Q1，2026-11-18，三条件）：bad 在 dev 头部 + 除 `backup/*` 外无分支以 bad 为祖先 + age ≤ 24h（`--window-hours` 可调），`retract.sh` preflight 全量校验；任一不满足走 revert / ADR-0010 D1；
