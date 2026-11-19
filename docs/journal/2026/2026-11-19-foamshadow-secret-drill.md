@@ -2,7 +2,7 @@
 title: "敏感数据桌面演练：retract 首次生产实弹与四条发现"
 date: 2026-11-19
 author: foamshadow
-tags: [se-arch, tool-git, tool-ci, incident]
+tags: [se-arch, tool-git, tool-ci]
 related: [ADR-0010, docs/proposals/merge-integrity.md, docs/guides/merge.md, "docs/journal/2026/2026-11-18-foamshadow-ruleset-migration.md"]
 ---
 
@@ -38,6 +38,19 @@ related: [ADR-0010, docs/proposals/merge-integrity.md, docs/guides/merge.md, "do
   「同一内容」预设的是内容错误，敏感场景无此半步（已对齐 proposal「敏感数据」行：
   轮换 + rewrite + 平台清理，revert 不在流程）
 
+## 独立验证清单（复核用）
+
+| # | 命令 / 依据 | 结果 |
+| --- | --- | --- |
+| 1 | `git log -S 'sk-drill-0000' origin/dev --oneline` | 空——dev 可达历史无假钥 |
+| 2 | `git rev-parse origin/dev` | `5b6185b…`——还原至泄漏前位置 |
+| 3 | `ls infra/drill-fake-credential.txt` | No such file——工作树无载荷 |
+| 4 | `git log -S 'sk-drill-0000' backup/dev-80a691f-20261119140212 --oneline` | `6b731e9`——备份 ref 持钥（预期，发现 3） |
+| 5 | `gh api repos/…/rulesets/27526062 --jq .enforcement` | `active`——RS-1 已恢复 |
+| 6 | `gh run list --branch dev` | run `44469325670` push success @ `5b6185b` |
+| 7 | `gh pr view 53 --json state,mergedAt` | MERGED @ `06:01:09Z`（T0+3s） |
+| 8 | `gh api repos/…/commits/80a691f…` | SHA 可达——平台侧发现（发现 4） |
+
 ## 发现项（按严重度）
 
 1. **签名链依赖桌面 agent**：commit signing 走 1Password SSH agent，解锁前**任何提交
@@ -63,8 +76,9 @@ diff 本身会再次完整暴露密钥明文。桌面轮换记录：若为真实
 
 ## 对毕业账面与 clone 通知的影响
 
-- 敏感数据桌面演练：**完成**（proposal 毕业条件逐项对齐：轮换 ✓ rewrite ✓ 验证 ✓
-  revert 不在流程 ✓）
+- 敏感数据桌面演练：**完成**（proposal 毕业条件逐项对齐：轮换（桌面替代）✓ rewrite ✓ 验证 ✓
+  revert 不在流程 ✓）。**本 PR 仅落演练证据**——merge.md「未做」行与 proposal 待办行的
+  翻牌随毕业 PR 走，不在本 PR 混意图
 - clone 通知闭项物料：retract 输出的 reset 指引可直接作为团队渠道模板；闭项仍待渠道
   发生（团队首次真实交互时顺手完成）
 - 毕业仅余：clone 通知闭项 → 毕业 PR（3/3 + 0 违例 + 撤回演练 + 本演练）顺路结账
@@ -73,7 +87,7 @@ diff 本身会再次完整暴露密钥明文。桌面轮换记录：若为真实
 
 | 产物 | 状态 |
 | --- | --- |
-| PR #53（载荷） | MERGED，其合并提交已撤出 dev 第一父链 |
+| PR #53（载荷） | MERGED；**人工授权直合**（`gh pr merge --merge`，豁免 PASS——演练四项预授权之一，执行差异在此记账）；其合并提交已撤出 dev 第一父链 |
 | bad `80a691f` / 载荷 `6b731e9` | dev 不可达；平台侧 SHA 仍可达（发现 4） |
 | 备份 `backup/dev-80a691f-20261119140212` | 演练后已删（local + origin） |
 | 快照 `.tools/retract/20261119T140231` | 本地留存 |
