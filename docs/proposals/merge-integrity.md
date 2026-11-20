@@ -27,7 +27,7 @@ adopted-as: "AGENTS「分支与版本」合并与同步子节（含「远端重�
 - 2026-11-18 Q1 定稿（三条件撤回窗口，`fix/infra-retract-window-guard`）：bad 在 dev 头部 + 无分支以 bad 为祖先 + age ≤ 24h；retract preflight 补 `for-each-ref --contains` 守卫（`dev` / `origin/dev` / `backup/*` 白名单，其余含 bad 的 ref 即拦，含 main；同机可见暴露全覆盖，异机 clone 由时间兜底）；同批补 ADR-0007 D5 理由（ADR-0010 撤销其机制前提，规则不变、理由改为真源传播成本）。
 - 2026-11-19 pilot 2/3（docs: PR #51）：`task merge` docs 路径首次实弹，squash 落 dev `dce0ab0`；PASS 快照 body-sha256（`a5eb7c37`）与落地正文密码学比对一致，“0 次 PASS 后描述变更导致落地正文不一致”违例保持 0；N1 docs 路径实测闭合。
 - 2026-11-19 pilot 3/3（docs: PR #52）：翻牌 PR 以 `task merge` docs 路径自合并（合并动作即第三票），squash 落 dev `5b6185b`；PASS 快照 body-sha256（`8f4ddb9d`）预检通过，落地正文与描述内容一致（尾换行归一化）。
-- 2026-11-19 **毕业**（本 PR）：pilot 3/3（#50 code / #51 #52 docs，全程 `task merge`，0 次「PASS 后描述变更」，`(#N)` 四度实证：#33/#50/#51/#52）；撤回演练闭项（retract 生产首弹 54s + clone 通知机制产品化，ADR-0012 三件套：retract 输出 / backup 提示 commit（实现：PR #56 `fix/infra-retract-hint-commit`，紧随本 PR 合并落 dev）/ AGENTS「远端重写对齐」条款；未发一次性 issue 为所有者裁定，公开仓库未知 clone 不可枚举属通知义务客观上限，残余风险由所有者接受）；敏感数据桌面演练完成（retract 生产首弹、四条发现，journal `2026-11-19-foamshadow-secret-drill.md`）；status → adopted，正文替换为指针。手动流程保留为脚本不可用时的兜底。
+- 2026-11-19 **毕业**（本 PR）：pilot 3/3（#50 code / #51 #52 docs，全程 `task merge`，0 次「PASS 后描述变更」，`(#N)` 四度实证：#33/#50/#51/#52）；撤回演练闭项（retract 生产首弹 54s + clone 通知机制产品化，ADR-0012 三件套：retract 输出 / backup 提示 commit（实现：PR #56 `fix/infra-retract-hint-commit`，紧随本 PR 合并落 dev）/ AGENTS「远端重写对齐」条款；未发一次性 issue 为所有者裁定，公开仓库未知 clone 不可枚举属通知义务客观上限，残余风险（未知/未通知 clone 可能保留已撤数据）由所有者接受）；敏感数据桌面演练完成（retract 生产首弹、四条发现，journal `2026-11-19-foamshadow-secret-drill.md`）；status → adopted，正文替换为指针。手动流程保留为脚本不可用时的兜底。
 
 ## 被否方案（毕业时随文保留）
 
