@@ -100,7 +100,7 @@ code 路径也已由 #36 实弹验证（2026-11-17）：不传 `--subject` / `--
 
 ### 手动合并检查单（零成本兜底）
 
-脚本不跑、手动点 GitHub Merge 按钮 = 绕过快照。以下检查单与 proposal §1 的警告文本**同文**（真源 proposal §1）。注意时点：proposal 设计它"随 PASS 评论附"，但这是 proposal 未毕业的部分——评审协议 #28 毕业条款不含此项，现行 PASS 评论尚不随附；毕业前，本指南是这份清单的唯一固定落点：
+脚本不跑、手动点 GitHub Merge 按钮 = 绕过快照。以下检查单与 proposal §1 的警告文本**同文**（真源 proposal §1）。注意落点：proposal 设计它"随 PASS 评论附"，评审协议 #28 毕业条款不含此项，现行 PASS 评论不随附——proposal 已毕业（2026-11-19），本指南仍是这份清单的唯一固定落点：
 
 > [!WARNING]
 > 手动合并前逐项确认：
@@ -190,17 +190,17 @@ RS-2 / RS-3 全程 active；窗口只暂停 PR 与 `ci-ok`，不暂停 force / d
 - `scripts/retract.sh` + `task retract`（#42）——P2b 的 reset / force / 恢复链自动化，production dry-run 已通过；
 - `scripts/merge.sh` + `task merge`（2026-11-18，PR #50）——P0 快照合并：PASS target/hash 校验、docs squash + 快照 body、code `--no-ff`、合并后落地核验；`task test:merge` fixture 自测。
 
-未落地、执行到对应步骤时按上文手动流程 + 逐条留痕的（全部出自 proposal 毕业条件与开放问题）：
+毕业清单（全部结案，2026-11-19；组件②实现紧随本 PR 合并落 dev——PR #56；条目出自 proposal 毕业条件与开放问题）：
 
 - ~~` (#N)` 自定义 subject 行为未实测~~ 已实测结案（2026-11-17，#33：显式 subject 逐字落地、不重复追加；见 proposal 演进记录）；
 - ~~撤回窗口正式拍板仍待人类确认~~ 已定稿（Q1，2026-11-18，三条件）：bad 在 dev 头部 + 除 `backup/*` 外无分支以 bad 为祖先 + age ≤ 24h（`--window-hours` 可调），`retract.sh` preflight 全量校验；任一不满足走 revert / ADR-0010 D1；
-- pilot 2/3（code: PR #50，`task merge` 自合并；docs: PR #51，`task merge` docs 路径，dev `dce0ab0`）；第三票 = 本翻牌 PR 自合并（`task merge`），3/3 记账随毕业 PR 落；
-- 敏感数据桌面演练未做；
+- pilot **3/3，已毕业**（2026-11-19：code #50；docs #51/#52，均 `task merge` 合并）；
+- ~~敏感数据桌面演练未做~~ 已完成（2026-11-19，retract 生产首弹，journal `2026-11-19-foamshadow-secret-drill.md`）；
 - ~~ruleset 迁移 vs break-glass~~ 已结案（Q2，2026-11-18）：ruleset 三规则集落地，break-glass 仅历史回退；
 - ~~脚本落位与 `task merge` / `task retract`~~ 已结案（Q4，2026-11-18）：根 `scripts/`；`retract.sh` + `task retract` 已落，`merge.sh` / `task merge` 已随本任务落地（2026-11-18）；
 - ~~旧 PR 页面的标注方式未定~~ 已有实战口径（Q5，2026-11-17 #34：评论 Superseded by #36 + journal 映射；见上文 P2a / P2b 段）。
 
-proposal 的 pilot 毕业门槛：merge.sh 已落地；至少 3 个 PR（docs 与代码各 ≥1）用它合并、0 次"PASS 后描述变更导致落地正文不一致"、` (#N)` 验证通过；外加一次撤回演练与一次敏感数据桌面演练。`retract.sh` 已落地并通过 production dry-run；pilot 2/3（code: PR #50；docs: PR #51，`task merge` docs 路径）。pilot 未完成前，手动流程保留为脚本不可用时的兜底，正常路径用 `task merge`。
+proposal 的 pilot 毕业门槛：merge.sh 已落地；至少 3 个 PR（docs 与代码各 ≥1）用它合并、0 次"PASS 后描述变更导致落地正文不一致"、` (#N)` 验证通过；外加一次撤回演练与一次敏感数据桌面演练。`retract.sh` 已落地并通过 production dry-run；pilot **已毕业**（2026-11-19：3/3 = code #50 + docs #51/#52；0 违例；撤回与敏感数据两演练闭项，详见 proposal）。手动流程保留为脚本不可用时的兜底，正常路径用 `task merge`。
 
 ## 常见误区
 
