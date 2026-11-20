@@ -39,6 +39,8 @@ tasks:
     desc: 本地 CI 等价物
     cmds:
       - task: check:catalog
+      - task: test:merge
+      - task: test:retract
       - task: ci:web
       - task: ci:api
 

@@ -57,7 +57,7 @@ run_scenario() {
     }
     die() {
       printf '[die] %s\n' "$*"
-      exit 78
+      exit 1
     }
     export RETRACT_ASSISTED_BY="$assisted_value"
     eval "$VALIDATION"
@@ -118,8 +118,20 @@ printf 'ok: push-fail\n'
 # --- E: invalid RETRACT_ASSISTED_BY (die before any mutation) -----------------
 rc=0
 out=$(run_scenario trailer-invalid "not valid!" 2>&1) || rc=$?
-[[ $rc -eq 78 ]] || fail "invalid trailer should die(78), got $rc"
+[[ $rc -eq 1 ]] || fail "invalid trailer should die(1), got $rc"
 [[ "$out" == *"invalid RETRACT_ASSISTED_BY"* ]] || fail "missing invalid-value message"
+ref_after=$(git -C "$tmp/trailer-invalid" rev-parse refs/heads/backup/dev-test 2>/dev/null)
+bad_after=$(git -C "$tmp/trailer-invalid" rev-parse HEAD)
+[[ "$ref_after" == "$bad_after" ]] || fail "backup ref moved despite die (zero-change assertion)"
 printf 'ok: trailer-invalid\n'
+
+# --- F: declared Assisted-by value (agent session) ----------------------------
+mkdir -p "$tmp/trailer-declared"
+git init -q --bare "$tmp/trailer-declared/origin.git"
+out=$(run_scenario trailer-declared "ClaudeCode:glm-5.3-flash" 2>&1); rc=$?
+[[ $rc -eq 0 ]] || fail "trailer-declared exited $rc"
+trailer=$(git -C "$tmp/trailer-declared/origin.git" log -1 --format=%B refs/heads/backup/dev-test | grep '^Assisted-by:')
+[[ "$trailer" == "Assisted-by: ClaudeCode:glm-5.3-flash" ]] || fail "declared trailer mismatch: $trailer"
+printf 'ok: trailer-declared\n'
 
 printf 'ALL SCENARIOS PASSED\n'
