@@ -129,6 +129,10 @@ sudo pacman -S go-task
 # 注意：Arch 包的二进制名是 go-task（不是 task）。做个软链与本文档其余部分保持一致：
 sudo ln -sf /usr/bin/go-task /usr/local/bin/task
 
+# Debian / Ubuntu：注意 apt 里的 task 包是 taskwarrior（撞名，不是本仓库要的
+# go-task），不要 apt install task——用官方安装脚本，装出来的二进制名就是 task：
+curl -fsSL https://taskfile.dev/install.sh | sh
+
 # Windows（PowerShell）
 winget install Task.Task
 
