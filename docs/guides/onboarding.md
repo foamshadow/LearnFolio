@@ -130,10 +130,13 @@ sudo pacman -S go-task
 sudo ln -sf /usr/bin/go-task /usr/local/bin/task
 
 # Debian / Ubuntu：注意 apt 里的 task 包是 taskwarrior（撞名，不是本仓库要的
-# go-task），不要 apt install task——用官方安装脚本，-b 指定安装目录
-# （脚本默认装到当前目录 ./bin，PATH 找不到，后续 task 命令会全部落空）：
+# go-task），不要 apt install task——用官方安装脚本装到 ~/.local/bin
+# （脚本默认装当前目录 ./bin，PATH 找不到，后续 task 命令会全部落空）：
 curl -fsSL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
-# 确认 $HOME/.local/bin 在 PATH；装系统级则改用：sudo sh -s -- -b /usr/local/bin
+export PATH="$HOME/.local/bin:$PATH"   # 当前会话立即可用；追加到 ~/.zshrc / ~/.bashrc 可持久
+
+# 系统级备选（全体用户，免配 PATH，注意 sudo 放在 sh 前、curl 管道完整）：
+curl -fsSL https://taskfile.dev/install.sh | sudo sh -s -- -b /usr/local/bin
 
 # Windows（PowerShell）
 winget install Task.Task
