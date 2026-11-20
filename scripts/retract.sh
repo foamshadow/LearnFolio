@@ -189,6 +189,31 @@ backup_remote=$(git ls-remote --heads origin "refs/heads/$backup" | cut -f1)
 [[ "$backup_remote" == "$bad_sha" ]] ||
   die "backup branch verification failed: $backup"
 
+# Hint commit on the backup tip (ADR-0012 component 2): an empty commit
+# (tree unchanged — the preserved bad history is untouched) so that every
+# clone carrying backup/* via the default fetch refspec receives the rewrite
+# notice + alignment command locally. Fast-forward only; failure here is
+# non-fatal (components 1 and 3 still notify).
+hint_msg=$(cat <<HINT
+clone 对齐通知:dev 已重写(bad ${bad_sha:0:7} 已撤回)
+
+对齐操作:git fetch origin && git reset --hard origin/dev
+前置自检:git log origin/dev..HEAD 为空且工作树干净,经人类确认后执行
+(AGENTS「远端重写对齐」/ ADR-0012);本分支保留重写前历史至事件闭项。
+
+Assisted-by: none
+HINT
+)
+hint_sha=$(git commit-tree "${backup}^{tree}" -p "$backup" -m "$hint_msg") ||
+  die "hint commit failed on $backup"
+git update-ref "refs/heads/$backup" "$hint_sha" "$bad_sha" ||
+  die "hint ref update failed: $backup"
+if git push origin "refs/heads/$backup:refs/heads/$backup"; then
+  log "hint commit on $backup: ${hint_sha:0:7}"
+else
+  log "WARNING: hint push failed (non-fatal); backup stays at ${bad_sha:0:7}"
+fi
+
 snapshot_rulesets
 
 restore_needed=0
