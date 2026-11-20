@@ -182,21 +182,22 @@ if ((!assume_yes)); then
   [[ "$answer" == "retract" ]] || die "aborted by operator"
 fi
 
+# ADR-0012 component 2 trailer declaration, validated BEFORE any mutation
+# (backup creation/push included): the retract caller declares authorship of
+# the tool-generated hint commit. Default `none` is accurate only for a human
+# operator; agent sessions must export RETRACT_ASSISTED_BY=<harness>:<model>
+# (same regex as AGENTS).
+case "${RETRACT_ASSISTED_BY:-none}" in
+  none|[A-Za-z][A-Za-z0-9]*:[a-z0-9][a-z0-9.-]*) assisted_by="${RETRACT_ASSISTED_BY:-none}" ;;
+  *) die "invalid RETRACT_ASSISTED_BY '${RETRACT_ASSISTED_BY}' (expected: none or Harness:model)" ;;
+esac
+
 log "creating backup branch $backup"
 git branch "$backup" "$bad_sha"
 git push origin "$backup"
 backup_remote=$(git ls-remote --heads origin "refs/heads/$backup" | cut -f1)
 [[ "$backup_remote" == "$bad_sha" ]] ||
   die "backup branch verification failed: $backup"
-
-# ADR-0012 component 2 trailer declaration, validated BEFORE any mutation:
-# the retract caller declares authorship of the tool-generated hint commit.
-# Default `none` is accurate only for a human operator; agent sessions must
-# export RETRACT_ASSISTED_BY=<harness>:<model> (same regex as AGENTS).
-case "${RETRACT_ASSISTED_BY:-none}" in
-  none|[A-Za-z][A-Za-z0-9]*:[a-z0-9][a-z0-9.-]*) assisted_by="${RETRACT_ASSISTED_BY:-none}" ;;
-  *) die "invalid RETRACT_ASSISTED_BY '${RETRACT_ASSISTED_BY}' (expected: none or Harness:model)" ;;
-esac
 
 snapshot_rulesets
 
