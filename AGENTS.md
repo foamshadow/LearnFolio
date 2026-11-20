@@ -87,8 +87,9 @@
 - **远端重写对齐**（撤回 / retract 之后，ADR-0012）：`git pull --ff-only` 失败、status 报
   diverged、push 被非 fast-forward 拒绝，且已知 dev 被重写时——先查 `backup/*` 的对齐提示，
   经**人类确认**后执行 `git fetch origin && git reset --hard origin/dev`；前置自检：
-  `git log origin/dev..HEAD` 为空（无未推提交）且工作树干净，不满足则先建
-  `backup/dev-<时间戳>`；agent 会话遇此状况主动提示人类并对齐（clone 通知机制的
+  `git log origin/dev..HEAD` 为空（无未推提交）且工作树干净；工作树脏时**不得直接
+  reset**——未提交改动以 `git stash push -u -m <唯一标签>` 或 `wip:` 提交留存，
+  无法留存即中止并提示人类；agent 会话遇此状况主动提示人类并对齐（clone 通知机制的
   agent 侧组件，2026-11-19 演练闭项决策）
 
 版本号与 tag：

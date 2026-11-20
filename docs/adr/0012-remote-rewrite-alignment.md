@@ -25,12 +25,19 @@ git 事实：未对齐的 clone 无法危害远端——含已撤提交的 push 
 clone 通知与对齐机制为三件套，全部项目内常驻：
 
 1. **retract 输出**（操作者广播）：`retract.sh` 完成时打印 `git fetch origin && git reset --hard origin/dev` 指引（已实现，2026-11-19 生产实测）。
-2. **backup 提示 commit**（被动载体）：撤回时在备份分支 tip 之上追加一个空提交（`commit-tree`，tree 不变、不动被保留的坏历史），message 载明重写事实与对齐命令。backup/* 走默认 fetch refspec，任何 clone 的 `git fetch` 都会把它带进本地对象库；生命周期与备份一致（恰好覆盖事故窗口）。**实现随下一个 `fix/infra-…` 任务落地**（scripts 改动须独立验证路径，不入 docs 分支）；落地前由组件 ①③ 承担通知职能。
+2. **backup 提示 commit**（被动载体）：撤回时在备份分支 tip 之上追加一个空提交（`commit-tree`，tree 不变、不动被保留的坏历史），message 载明重写事实与对齐命令；提示**仅在重写全链成功后发布**，发布组件全失败路径非致命（WARNING 续跑）。分发面 = **默认 refspec 配置下的 clone**（`--single-branch` / 自定义 refspec 不收）；trailer 经 `RETRACT_ASSISTED_BY` 环境变量声明（AGENTS 同款正则，校验先于任何变更）。生命周期与备份一致（恰好覆盖事故窗口）。**已实现**（PR #56，`fix/infra-retract-hint-commit`，fixture `task test:retract` 六场景）。
 3. **AGENTS「远端重写对齐」条款**（主动发现与对齐）：agent 会话遇 `git pull --ff-only` 失败 / status diverged / push 被非 fast-forward 拒绝且已知 dev 被重写时——先查 `backup/*` 对齐提示，经**人类确认**后执行 reset 对齐（前置自检：`git log origin/dev..HEAD` 为空且工作树干净）。条款文本见 AGENTS「分支与版本」合并与同步子节（随 merge-integrity 毕业 PR 落地）。
+
+## 被否方案
+
+- **一次性 issue @ 已知成员**：只到 GitHub 账号、不落 git 对象，受众靠人记忆而非工具链；所有者裁定不用。
+- **仅 AGENTS 条款、无备份载体**：组件 ③ 只覆盖 agent 会话的主动发现，非 agent 的既有 clone 无任何触达点——三件套缺 ② 即退化。
+- **全量自动化 clone 通知**：GitHub 不记录、不暴露 clone 集合（公开仓库尤甚），平台层不可能；已知成员集合之外无法触达。
 
 ## 后果
 
 - **流程冻结线合规**：Phase 0 收口后的规则变更以本 ADR + PR 承载；AGENTS 条款引用本 ADR，不另设无源规则。
 - **演练闭项口径**：merge-integrity 的「clone 通知」以本三件套产品化为闭项依据。未发一次性 issue 为所有者裁定；公开仓库的未知 clone 不可枚举属通知义务的客观上限，其残余风险（仅本地困惑、假钥无真实泄露）由所有者接受并记录于毕业 PR 与 proposal 演进记录。
-- **生效时点**：首次真实 rewrite 起 ①③ 立即生效；② 随实现任务补齐。
+- **备份保留窗口**：备份分支（含提示 commit）保留至事件闭项——真实事件口径 = 平台清理完成且已知成员对齐确认；清理由操作者执行并记 journal（2026-11-19 演练先例：演练结束即删）。
+- **生效时点**：#56 合并（dev 落地）起三件套全量生效；首次真实 rewrite 即首次行使。
 - **对齐操作的人类确认要求**与 ADR-0007 破坏性操作分级一致：reset 丢弃本地 dev 状态属重操作，agent 只提示、人确认。
