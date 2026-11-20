@@ -39,6 +39,8 @@ tasks:
     desc: 本地 CI 等价物
     cmds:
       - task: check:catalog
+      - task: test:merge
+      - task: test:retract
       - task: ci:web
       - task: ci:api
 
@@ -101,6 +103,11 @@ tasks:
     desc: 快照合并脚本的 fixture 自测（不触网、不合并）
     cmds:
       - bash scripts/tests/merge-snapshot-test.sh
+
+  test:retract:
+    desc: retract 提示 commit 的 fixture 自测（不触网、不动 ruleset）
+    cmds:
+      - bash scripts/tests/retract-hint-test.sh
 
   format:
     desc: 用 Prettier 格式化 Web 代码
