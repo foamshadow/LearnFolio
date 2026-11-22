@@ -34,5 +34,13 @@
 - [ ] 合入内容使用 conventional commits（scope：web / api / infra / ci / docs / deps）
 - [ ] 改动与 SPEC / ADR 对齐，验收条目如实勾选
 
+### 写回自查（清单 1，随窗口维护、PASS 前完整；合并请求停点只核验——ADR-0013）
+
+- [ ] SPEC 窗口闭合：变更记录 / 验收勾选 / 实测结果齐（不涉及 SPEC 则勾并注"不涉及"）
+- [ ] 复述面：本 PR 改变的事实/规则已 grep AGENTS + guides——更新或注"无需更新"（一句话理由）
+- [ ] 登记面：新 ADR → README 决策线行；新词表值 → 词表行；触及 proposal → 演进记录（无则注"无"）
+- [ ] journal 封账：边界 = 最后一次 push；无 journal → 注理由
+- [ ] 终态就位：触及的状态字段已增量维护至差一步终态（无状态字段则勾并注"无"）
+
 <!-- 将下一行占位替换为实际值，并保留在正文末尾（squash 后进入提交正文）；纯人类 PR 写 none -->
 Assisted-by: <harness>:<model>

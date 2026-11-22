@@ -100,6 +100,7 @@ ADR 按决策时间排列，单看是碎片，按阶段读是一条线。建仓�
 | 历史修复（Phase 0） | ADR-0010 历史修复与 docs 分支 | accepted | message-only rewrite、docs 单提交撤销 |
 | 评审署名（Phase 0） | ADR-0011 评审署名双轨与 pr-meta 边界 | accepted | 状态评论角色行、commit 级 Reviewed-by、Pi/glm-5.3 登记、C6 部分取代 |
 | 远端重写对齐（Phase 0 后） | ADR-0012 撤回后 clone 通知与对齐 | accepted | 三件套机制（retract 输出 / backup 提示 commit / AGENTS 条款）、trailer 声明制、备份保留窗口 |
+| 文档写回（Phase 0 后） | ADR-0013 journal 写回与审查记账 | accepted | 事件边界决定写回边界、二值判定无尾随、预先性记录、journal 写回时机与审查记录表 |
 
 读法：先看阶段，再看单篇。`deprecated` 表示部分条款已被取代，沿 `supersedes` 找继任者（ADR-0005 只取代 ADR-0003 的合并方式条款；ADR-0010 只取代 ADR-0005 的 docs 单提交条款；ADR-0011 只取代 ADR-0009 的 C6 job 清单、push 跳过集合与结果矩阵条款，ADR-0009 按部分取代约定不挂 superseded-by）。**新增 ADR 时在本表追加一行**——这张表就是决策线的入口。
 

@@ -103,5 +103,10 @@ amend 补 trailer 的时点仍然晚于生成；且 ADR-0011 的"tree 不变可�
   ③ 毕业演练矩阵（proposal 毕业条件）：≥2 提交代码任务 + review=agent、
   review=无 映射样本、docs 任务、review=人工样本；④ Phase 1 spec 起草（主线，
   编号起草时分配）。
+- **2026-11-22 遗留处置更新**：① 已随 PR #62 吸收（三篇文档措辞/口径修正）。
+  ② 分组转正——素材 1/3/5 与 4 的 docs 分支随 docs-writeback proposal（PR #63）
+  毕业落 **ADR-0013**（操作级清单/learning 例外落 AGENTS 同批）；素材 2/6 与
+  4 的功能提交/fixup 分支**仍随 task-lifecycle-gates 毕业版**（演练矩阵验证
+  后）。审查记录表格式已登记 journal 模板（本篇首发样例为范本）。
 - Phase 1 spec 的首个真实任务即毕业演练起点（proposal 毕业条件原文口径）：
   按新流程走全链，复盘逐停点记"触发/跳过"。
