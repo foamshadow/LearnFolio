@@ -277,7 +277,7 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
 
 - 状态机：`REVIEW: BLOCKED`（评审者）→ `REVIEW-FIX`（作者）→ `REVIEW: PASS`（评审者）；一条评论承载一个状态，不在评论区聊天；ID 用 `B` / `N` / `Q`，阻塞项必须带证据；两轮上限，第二轮仍 BLOCKED 则拆 PR、缩范围或升级给人决策。
 - `REVIEW: PASS` 是评审结论，不是 GitHub approval；同账号自审路径 = `COMMENTED` 评审 + `REVIEW: PASS` 评论 + 人类明确合并授权；`required_approving_review_count=0`（单人多 agent 阶段）。
-- PASS 必须带 `target <sha>`、`body-sha256: <sha256(title + "\n" + body)>`；所有状态评论都带角色行：`REVIEW: BLOCKED` / `REVIEW: PASS` 末行 `Reviewer: <harness>:<model>`，`REVIEW-FIX` 末行 `Author: <harness>:<model>`（键表同 `Assisted-by`，人类写 `none`）。这是协议软要求：CI 不校验评论，缺失不阻断合并，但留下状态无主的缺口。
+- PASS 必须带 `target <sha>`、`body-sha256: <sha256(title + "\n" + body)>`——快照行须**顶格**（各为独立行、行首无列表标记；merge.sh 按 `startswith` 逐行提取，带 `- ` 前缀即不可解析）；所有状态评论都带角色行：`REVIEW: BLOCKED` / `REVIEW: PASS` 末行 `Reviewer: <harness>:<model>`，`REVIEW-FIX` 末行 `Author: <harness>:<model>`（键表同 `Assisted-by`，人类写 `none`）。这是协议软要求：CI 不校验评论，缺失不阻断合并，但留下状态无主的缺口。
 - PASS 后 PR 标题/描述冻结：任何编辑作废 PASS，必须重新 PASS 并重新快照；PR 描述只放最终变更，末行 `Assisted-by` trailer 之后不得有内容。
 - docs：squash，合并用 PASS 快照生成正文；code：`--no-ff`，merge commit 正文为空，分支提交 trailer 由 attribution 校验。
 - 人类授权后 agent 可执行合并（跑脚本）；未授权不得 merge。评审状态只在评论，PR 描述不写评审过程。

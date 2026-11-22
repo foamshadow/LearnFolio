@@ -108,7 +108,7 @@ merge: <squash|--no-ff>
 Reviewer: <harness>:<model>
 ````
 
-`Reviewer` / `Author` / `Reviewed-by` 的键表与 `Assisted-by` 相同；人类写 `none`。同账号下这些是**声明**，不是 GitHub approval。
+`Reviewer` / `Author` / `Reviewed-by` 的键表与 `Assisted-by` 相同；人类写 `none`。同账号下这些是**声明**，不是 GitHub approval。快照两行（`target` / `body-sha256:`）须**顶格**（各为独立行、行首无列表标记）——merge.sh 按 `startswith` 逐行提取，带 `- ` 前缀即解析落空。
 
 ## 一次评审的完整清单
 
@@ -151,7 +151,7 @@ Reviewer: <harness>:<model>
 
 ## PASS 的冻结与快照
 
-- PASS 评论带 `target <sha>`、`body-sha256: sha256(title + "\n" + body)`、末行 `Reviewer`。
+- PASS 评论带 `target <sha>`、`body-sha256: sha256(title + "\n" + body)`（两行**顶格**，行首无列表标记——merge.sh `startswith` 逐行提取）、末行 `Reviewer`。
 - PASS 后 PR 标题/描述**冻结**；任何编辑都作废 PASS，必须重新 PASS 并重新快照。
 - docs：合并用 PASS 快照生成 squash 正文，不读实时描述。code：merge commit 正文为空；快照只冻结 title / 描述，分支提交 trailer 由 attribution 校验。
 - 手动合并 = 绕过快照：必须逐项确认标题、描述末行 trailer、body hash、CI、方向、合并方式；合并后立刻检查落地提交。
