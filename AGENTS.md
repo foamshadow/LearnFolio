@@ -284,6 +284,7 @@ model 键（= 官方 API id 的 kebab-case 小写；快照后缀照抄，不自�
 - PR 级评审只在评论层；commit 级提交前互审走 `Reviewed-by`（见「commit 级评审署名」）；两者记录不同事件，不互相替代。不把评审状态写进 PR 描述（`pr-meta` 拒绝 `REVIEW` / `Reviewer` / `Author` / `Reviewed-by` 行）。键表闭合——未登记 runtime 先走登记 PR；`glm-5.3` 与 `glm-5.3-flash` 是两个键。
 - 历史 PASS 缺口（#27 / #28 / #29 缺席或署名与事实不符）与历史 commit 级评审均不回填；journal 记录，规则向前生效（ADR-0011）。
 - docs 单意图、提交数不限（ADR-0010）。
+- herdr 编排（proposals/herdr-collaboration，draft）：review=外部 agent 选中后才检测 herdr（`test "${HERDR_ENV:-}" = 1`，不静默检测）；在 herdr 中按该 proposal 编排——评审者席位寻址（`rv*` 命名即登记、指派名带任务号）、互传分级（commit 级会话直达 / PR 级先评论后会话提醒查收）、池化生命周期（收尾 compact + 标记清除回池）；不在 herdr 中退回人工评审。
 
 ## 验证命令（agent 自证完成的唯一方式；未跑通不得声称完成）
 
