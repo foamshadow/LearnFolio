@@ -13,7 +13,7 @@ related: [ADR-0009, ADR-0011, SPEC-0001, ADR-0003, ADR-0004]
 
 给所有要**开 PR** 的成员（人类与 agent）——只要你的改动要走 PR 进 dev / main，就绕不开本文描述的这道门。前置：读过 git-workflow.md 的地基概念（知道分支、merge、PR 是什么）；**不假设你用过 GitHub Actions**，CI 领域的全部词汇在下一节就地讲。
 
-实现本体已随 t0 / #27 入库：`.github/workflows/ci.yml`（工作流定义）+ `.github/scripts/` 四个脚本（aggregate / check-title / check-attribution / check-pr-meta）+ PR 描述模板。本文讲门禁的**结构与读法**；行为与本文不符时以实现文件为准、视为本文 bug 同 PR 修正；设计出处是 SPEC-0001-A5、ADR-0009 与 ADR-0011（C6 / 评审署名部分）。
+实现本体已随 t0 / #27 入库：`.github/workflows/ci.yml`（工作流定义）+ `.github/scripts/` 五个脚本（aggregate / check-title / check-attribution / check-pr-meta——ci-ok 聚合链上的四个；check-catalog.mjs 由 web job 消费，本地 task ci 含全量）+ PR 描述模板。本文讲门禁的**结构与读法**；行为与本文不符时以实现文件为准、视为本文 bug 同 PR 修正；设计出处是 SPEC-0001-A5、ADR-0009 与 ADR-0011（C6 / 评审署名部分）。
 
 ## 核心图景
 
