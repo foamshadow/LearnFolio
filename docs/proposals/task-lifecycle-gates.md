@@ -37,7 +37,7 @@ adopted-as: ""
 
 review 是**一个配置**，档内执行者可换（dev 环节用 Pi、PR 环节用 DSH 都属"外部 agent"档）：
 
-- **dev-review**（仅代码分支，见 §5 整理门执行循环）：**审查发生在每个待生成整理提交之前**——break 点上先 `git reset --soft HEAD^` 把该段改动放回 index，审 staged tree（`git diff --cached`，即该段最终内容，#44"暂存树逐棵审"模式制度化）；通过后 `git commit -C HEAD@{1} --trailer "Reviewed-by: <审查者>"` 生成提交——trailer 随生成写入，ADR-0011 时点纪律在机制上成立。审查者 ≠ `Assisted-by` 参与者（互审约束直接适用）。
+- **dev-review**（仅代码分支，见 §5 整理门执行循环）：**审查发生在每个待生成整理提交之前**——break 点上先 `git reset --soft HEAD^` 把该段改动放回 index，审 staged tree（`git diff --cached`，即该段最终内容，#44"暂存树逐棵审"模式制度化）；通过后 `git commit -C HEAD@{1} --trailer "Reviewed-by: <审查者>"` 生成提交——trailer 随生成写入，ADR-0011 时点纪律在机制上成立。审查者 ≠ `Assisted-by` 参与者（互审约束直接适用）；人工审查写 `Reviewed-by: none`（具体人名落 PR 评论 / journal，ADR-0011 口径）。
 - **pr-review**：按评审协议状态机（BLOCKED → REVIEW-FIX → PASS）执行。
   - 人工 → 人按协议审、发 PASS；外部 agent → 指定 agent 按协议审、发 PASS。
   - **无"无"档**：PASS 是 merge.sh 快照校验的硬前置，不可跳过。
@@ -100,7 +100,7 @@ review 是**一个配置**，档内执行者可换（dev 环节用 Pi、PR 环�
 
 现行"PR 开启前 rebase -i 整理"是覆盖所有代码 PR 分支的一般条款（AGENTS 提交纪律节，无分支限定；docs 是唯一显式豁免——squash 合入）。本 proposal 做两处修改：
 
-**其一，适用范围显式化**：整理门与 dev-review 限定**代码分支**（feat / fix / hotfix / backport）。docs 不走门不走 dev-review——这不是"按分支类型豁免"的例外，而是**载体特性豁免**：docs 由 GitHub squash 落地，分支上的多个提交合法（ADR-0010）且不进入历史，`Reviewed-by` trailer 随 squash 丢失（ADR-0011 明文），docs 的评审记录本就走 PR 状态评论 / journal。整理门在代码分支内**统一按序列重组需要触发**，不再按分支类型二次划分（hotfix 多提交与 feat 多提交同门同流程）。
+**其一，适用范围显式化**：整理门与 dev-review 限定**代码分支**（feat / fix / hotfix / backport）。docs 不走门不走 dev-review——这不是"按分支类型豁免"的例外，而是**载体特性豁免**：docs 由 GitHub squash 落地，分支上的多个提交合法（ADR-0010）且不进入历史，`Reviewed-by` trailer 随 squash 丢失（ADR-0011 明文），docs 的评审记录本就走 PR 状态评论 / journal。整理门在代码分支内**统一按多提交序列触发（≥2 提交或含 wip / fixup 碎片）**，不再按分支类型二次划分（hotfix 多提交与 feat 多提交同门同流程）。
 
 **其二，dev-review 嵌入整理门执行循环**：ADR-0011 时点纪律要求 commit 级评审发生在 commit 生成前（#50 反例：提交后才审，不能带 trailer）。逐命令序列（break 的时点语义 = 停在上一条 todo 执行完之后，HEAD 已是该段提交——因此不能 amend 补 trailer，必须先把改动放回 index 再审）：
 
@@ -108,13 +108,13 @@ review 是**一个配置**，档内执行者可换（dev 环节用 Pi、PR 环�
 2. agent 执行 rebase -i，在 break 点暂停（此时 HEAD = 该段提交，工作区/index 干净）；
 3. `git reset --soft HEAD^`——该段改动整体回到 index，HEAD 退回上一段；
 4. reviewer 按 review 档位审 **staged tree**（`git diff --cached` = 该段相对分支基点的最终内容；agent 审查者可批量审完全部 break 点的 staged tree 再依次放行）；
-5. 通过 → `git commit -C HEAD@{1} --trailer "Reviewed-by: <审查者>"` 生成该段提交（message 复用该段原提交，trailer 随生成写入）；
+5. 通过 → `git commit -C HEAD@{1} --trailer "Reviewed-by: <审查者>"` 生成该段提交（message 复用该段原提交，trailer 随生成写入；人工审查者写 `none`，具体人名落 PR 评论 / journal）；
 6. 发现问题 → 修改 index 内容（改文件 + `git add`）→ 重审 → commit；
 7. `git rebase --continue` 进入下一段。
 
-机制注记：ADR-0011 的"tree 不变（message-only rewrite）可保留"讲的是**已存在** trailer 在重写后的保留，不覆盖"提交后补写新 trailer"——因此本机制不走 break+amend 路径（被否方案表），评审与生成之间以 index 为界，"生成前审"在 git 时序上成立。
+机制注记：ADR-0011 的"tree 不变（message-only rewrite）可保留"讲的是**已存在** trailer 在重写后的保留，不覆盖"提交后补写新 trailer"——因此本机制不走 break+amend 路径（被否方案表），评审与生成之间以 index 为界，"生成前审"在 git 时序上成立。执行注记：`git commit --trailer` 需 Git ≥ 2.32，低于该版本可用 `git interpret-trailers` 等价写入。
 
-**单提交任务的跳过规则**：干净单提交（无 wip / fixup 碎片）自动跳过整理门，但 agent 须在合并请求里附**任务分解依据**（一句话说明该提交即完整任务、非"整个任务压成一个提交"）——"整理不是 squash、禁止整体压一个提交"的现行纪律不因跳过而豁免，合并授权时抽查该声明。多提交一律过门（保守代理：不引入"需要重组"的语义判据，≥2 提交即触发，宁可多一次人定方案的停）。
+**单提交任务的跳过规则**：干净单提交（无 wip / fixup 碎片）自动跳过整理门，但 agent 须在合并请求里附**任务分解依据**（一句话说明该提交即完整任务、非"整个任务压成一个提交"）——"整理不是 squash、禁止整体压一个提交"的现行纪律不因跳过而豁免，合并授权时抽查该声明。多提交一律过门（保守代理：不引入语义判据，与 §5 触发条件同口径——≥2 提交或含 wip / fixup 碎片即触发，宁可多一次人定方案的停）。
 
 ### 6. 异源纪律、推导理由与演进口
 
@@ -150,3 +150,4 @@ review 是**一个配置**，档内执行者可换（dev 环节用 Pi、PR 环�
 - 2026-11-20 起草：Phase 1 spec 暂停期的一次流程审计对话成形——全链控制点矩阵盘点 → 任务启动三项配置 → review 单配置贯穿 → 整理门条件化（hotfix 考证修正：现行一般条款覆盖所有代码 PR 分支，触发条件改为"序列需要重组"）。
 - 2026-11-20 round 1 评审修正（PR #59，DSH BLOCKED 4 阻塞 + 8 非阻塞）：B1 毕业路径去下份 spec 的预言性编号引用（改为"Phase 1 spec，编号起草时分配"）；B2 dev-review 初步重定义进整理门 break 循环；B3 整理门/dev-review 限定代码分支、docs 按载体特性豁免；B4 毕业产物写明部分取代链（ADR-0007 D1/D2、ADR-0011 D1 → deprecated，superseded-by 留空）。非阻塞：N1 演练矩阵逐停点记账；N2 "永远"改"现阶段人工"；N3 触发条件保守代理化 + 单提交跳过附分解依据；N4 双授权齐全的推导理由补记（完全自主模式信号）；N5 herdr 口径诚实化与体积阈值改复盘口径；N6 停点表编号注记；N7 补 backport；N8 related 路径统一。
 - 2026-11-20 round 2 评审修正（DSH BLOCKED，B2 未闭 + N9–N13）：B2 重做——break+amend 时点仍晚于 commit 生成（break 停在上一条 todo 之后），改为 break 点 `git reset --soft HEAD^` 放回 index → 审 staged tree → `git commit -C HEAD@{1} --trailer` 生成时写入（"生成前审"在 git 时序上成立；ADR-0011"保留"语义不覆盖新增 trailer 的引用一并修正）；N9 补 §6 节（round 1 漏排"异源纪律与演进口"独立节，表 #7 引用悬空）；N10 演进记录去编号字面；N11 演练矩阵补 docs 任务与 review=人工样本；N12 毕业 PR 将扩展 supersedes 为数组（同批改 README/模板），不拆两篇 ADR；N13 确认链映射收窄为"破坏性/授权/审查类停点（#3–#10）"，任务级授权点（#1/#2）待范围扩展。第二轮上限已到，按协议缩范围复审（仅 B2/N9/N12 范围）。
+- 2026-11-22 顺路吸收 #59 评审 non-blocking note 三条（DSH）：§5 触发条件措辞统一为"多提交序列触发"；人工 reviewer 的 trailer 值补 `none` 口径（§2/§5）；§5 补 `--trailer` 需 Git ≥ 2.32 注记。

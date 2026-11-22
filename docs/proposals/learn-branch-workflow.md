@@ -28,7 +28,7 @@ adopted-as: ""
 
 与 docs/proposals/task-lifecycle-gates.md 的关系：learn 流程是**人类任务**的
 宽松裁剪实例（agent 流程的三项配置/整理门/break 审查全部不适用），保留的是
-确认任务与 journal 回收评审两个停点——两者构成流程谱系的两个物种。
+确认任务、聚合 PR 评审与合并授权三停点（评审承载学习维度，全景见 §5）——两者构成流程谱系的两个物种。
 
 ## 提议
 
@@ -191,3 +191,4 @@ dev 最终状态：标答内容 + N 份 journal；`--graph` 全图每任务恒�
   learn-finalize 实现注记（restore --staged --worktree、聚合基 = finalize
   时刻聚合 tip）；N4 挂链验证命令改 merge-base --is-ancestor；Q1 任务锚
   固定 spec 全锚防跨 spec 撞名。
+- 2026-11-22 顺路吸收本轮评审 non-blocking note：背景节停点计数对齐 §5 三停点全景（确认任务 + 聚合评审 + 合并授权）；"七类 → 九类"分类口径留毕业 PR 定夺。

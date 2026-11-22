@@ -10,7 +10,7 @@ related: [docs/proposals/task-lifecycle-gates.md, ADR-0007, ADR-0011]
 
 > agent 起草、人审定（作者键 = 审定者）。本篇记录 task-lifecycle-gates proposal
 > （PR #59，dev `a0b3e4d`）从流程审计讨论到合并的完整事件，以及合并后两轮结构
-> 讨论沉淀的规则素材。文末「审查记录」表是新定形态的首个应用实例。
+> 讨论沉淀的规则素材。文末「审查记录」表是本次起用的新形态（格式待随毕业版登记）。
 
 ## 事件
 

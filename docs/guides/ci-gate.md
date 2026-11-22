@@ -154,8 +154,8 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
 - **读红灯的顺序**
   ① 看 ci-ok 日志首行的结果快照（`event=… changes=… …`）与 `::error::` 注解——哪个 job 红 / 被跳过 / 期望什么，一眼可得；② 对照矩阵判"这次触发下它该不该 skipped"；③ 再进对应 job 日志定位。不要从 Checks 列表第一条往下翻。**特例**：changes 本身红（失败而非 skipped）会级联——web / api 随之被跳过、矩阵判红，此时根因在 changes 的日志，不在分端。
 
-- **"我改了根目录的 Taskfile / tsconfig，怎么 web / api 没跑？"**
-  已知假阴性：changes 的 filters 只覆盖 apps/web、apps/api、packages 与 workspace 根清单文件（pnpm-lock / pnpm-workspace / package.json），根工具链文件尚未入表。优化候选已登记（`proposals/ci-gate-optimizations` C4，触发条件 = t1 引入根 Taskfile），不是你的姿势不对——**正确姿势**：改根工具链时顺手全量自查，或等 C4 落地。
+- **"我改了根目录的文件，怎么知道会不会触发构建？"**
+  分端是否被触发由 changes 的 filters 决定；C4 已随 t1 / t2 落地（PR #36 / #40），filters 现覆盖 `apps/web/**`、`apps/api/**`、`packages/**`、`Taskfile.yml`、`.nvmrc`、`.prettierrc` / `.prettierignore`、`.github/scripts/check-catalog.mjs`、`.github/workflows/ci.yml` 与 workspace 清单（pnpm-lock / pnpm-workspace / package.json）。零散根文件（`.npmrc` / `.editorconfig` / `lefthook.yml` 等）不在表内、不触发分端构建，属已知且接受——PR 上漏网的改动由合入后 dev push 全量兜底（事后发现，见设计三）。**正确姿势**：不确定时看 ci-ok 日志首行的 `changes=` 快照，而不是猜。
 
 ## 延伸
 
@@ -163,7 +163,7 @@ pull_request 事件（对 PR 检查，结果挂 head SHA）      push 事件（d
 
 - **要看为什么**（每个设计点的完整论证、被否方案表与翻转条件）：ADR-0009；C6 / 评审署名部分见 ADR-0011
 - **要看实现规格**（六变体正则全文、矩阵细则、实测清单）：SPEC-0001-A5
-- **要动手改门禁前**：proposals/ci-gate-optimizations.md——C1–C5 优化候选与"已接受、不修"清单，别重提已否决项
+- **要动手改门禁前**：proposals/ci-gate-optimizations.md——优化候选（C1 / C2 / C3 / C5；C4 / C6 已落地）与"已接受、不修"清单，别重提已否决项
 - **要看门禁为什么长这样**（push 兜底与 up-to-date 死锁的前因）：ADR-0003
 - **要看署名规则本体**（trailer 格式、键表、信源查证）：ADR-0004 + AGENTS 提交纪律节
 - **要看任务全流程**：git-workflow.md（本文只展开其中 CI 一环）
