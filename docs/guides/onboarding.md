@@ -13,7 +13,7 @@ related: [SPEC-0001, ADR-0007]
 
 给第一次 clone 仓库、要把 `apps/web` 与 `apps/api` 跑起来的成员（人类或 agent）。前置只需要会三件事：`git clone`、`git commit`、`git push`，以及使用终端。不需要先懂 Nuxt、pnpm workspace、Go 或 Task——本文会把每个工具第一次出现时的作用讲清楚。
 
-本文覆盖 **Node + Go 侧**（`apps/web`、`apps/api` 与 workspace 根）与**本地依赖服务**（第 9 步，Docker Compose）。规则真源仍是 `AGENTS.md` 与 `SPEC-0001`，本文只解释怎么把环境搭起来，不新增规则。
+本文覆盖 **Node + Go 侧**（`apps/web`、`apps/api` 与 workspace 根）、**本地依赖服务**（第 9 步，Docker Compose）与**协作工具链**（第 11 步，gh 与 herdr——评审与合并的命令行客户端）。规则真源仍是 `AGENTS.md` 与 `SPEC-0001`，本文只解释怎么把环境搭起来，不新增规则。
 
 ## 核心图景
 
@@ -336,6 +336,52 @@ task format
 
 它只对 `apps/web` 跑 Prettier；编辑器保存时也会先走 Prettier，再由 ESLint 修可自动修复的规则。Go 侧用 `gofmt`。两者都已进 `pre-commit`（自动修并 `stage_fixed` 进暂存区），`task format` 现在主要给编辑器之外的批量整理用；`golangci-lint` 的 formatter 配置仍暂未启用。
 
+### 11. 协作工具链：gh 与 herdr
+
+环境跑通 `task ci` 之后，参与协作（评审、合并）还需要两个命令行客户端。它们的版本**不进仓库的版本矩阵**（上表七层各管一个版本真源，这两个工具不在其中）：gh 取较新的稳定版即可（`merge.sh` / `retract.sh` 消费的是 `gh pr` 的稳定 API 面），herdr 用自带的更新通道保持最新。
+
+**gh（GitHub CLI，必装）**：
+
+```bash
+# macOS
+brew install gh
+
+# Arch Linux
+sudo pacman -S github-cli
+
+# Windows（PowerShell）
+winget install GitHub.cli
+
+# 其他系统：按 https://cli.github.com/ 安装
+
+gh --version    # 较新稳定版即可（本文写作时 2.105.x）
+gh auth login   # 授权 GitHub 访问（选 HTTPS + 浏览器或 token）
+gh auth status  # 应显示已登录账号
+```
+
+gh 是合并与评审的命令行底座：`task merge` / `task retract`（`scripts/merge.sh`、`scripts/retract.sh`）用 `gh pr` API 做 PASS 快照校验与合并执行；评审者发 `REVIEW:` 状态评论、作者拉评审结论（`gh pr view --comments`）也走它。没有 gh，合并链路从 `task merge` 第一步就断——这也是它属于主线上手链而不是可选项的原因。
+
+**herdr（可选，多 agent 协作时安装）**：terminal workspace manager for AI coding agents——把终端组织成 workspace / tab / pane，识别 pane 里跑的 coding agent 并暴露 `idle` / `working` / `blocked` / `done` 生命周期状态。本仓库用它做评审编排：review=外部 agent 时，评审者席位命名（`rv*`）、互传协议与池化生命周期见 `AGENTS.md`「评审协议」的 herdr 段与 [herdr 协作编排约定](../proposals/herdr-collaboration.md)；不在 herdr 环境里时不检测、不编排，评审退回人工。
+
+```bash
+# macOS（Homebrew）
+brew install herdr
+
+# 官网直装（Linux 推荐这条，二进制落在 ~/.local/bin）：
+# 安装入口见 https://herdr.dev
+# Nix / mise 用户也可走各自渠道
+
+herdr --version  # 本文写作时 0.9.x
+herdr status     # client / server 状态自检
+
+# 更新：仅官网直装形态支持自更新；brew / nix / mise 渠道安装时
+# `herdr update` 会拒绝执行并提示对应渠道的升级命令
+herdr update                 # 下载安装最新版（会提示先 detach 会话）
+herdr channel set preview    # 可选：切 preview 更新通道（stable 为默认）
+```
+
+用法细节不依赖本文记忆：`herdr --help` 是命令权威，`herdr --skill` 输出内嵌使用手册（给 agent 读的最新版）。agent 侧的第一个动作永远是确认自己跑在 herdr 管理的 pane 里（`test "${HERDR_ENV:-}" = 1`）——不在其中就不做任何 inspect / control。
+
 ### 常用命令速查
 
 | 场景 | 命令 |
@@ -354,6 +400,8 @@ task format
 | 校验契约无漂移 | `task gen:check` |
 | 格式化 Web | `task format` |
 | 只查依赖是否走 catalog | `task check:catalog` |
+| GitHub CLI 授权 | `gh auth login` |
+| 多 agent 协作会话 | `herdr`（启动 / 附着持久会话） |
 
 ### Windows 备注
 
@@ -435,3 +483,6 @@ Go module 根是 `apps/api`，不是仓库根；根目录没有 `go.mod`。`task
 - `Taskfile.yml` / `pnpm-workspace.yaml` / `.nvmrc` / `package.json` / `apps/api/go.mod` / `apps/api/.golangci.yml`：本文提到的版本与配置真源
 - [Task 官方文档](https://taskfile.dev/)
 - [Huma 文档](https://huma.rocks/)
+- [GitHub CLI 文档](https://cli.github.com/)
+- [herdr](https://herdr.dev/)：多 agent 终端复用器——安装入口与文档；`herdr --skill` 是内嵌使用手册
+- [评审协议讲解](review.md)：评审评论与合并的 gh 侧操作

@@ -4,7 +4,7 @@ author: foamshadow
 date: 2026-11-17
 status: draft
 tags: [se-arch, tool-git]
-related: [ADR-0003, ADR-0005, ADR-0007, ADR-0009, ADR-0010, ADR-0011, SPEC-0001]
+related: [ADR-0003, ADR-0005, ADR-0007, ADR-0009, ADR-0010, ADR-0011, ADR-0012, SPEC-0001]
 ---
 
 # 合并讲解：从 PASS 到落地提交，以及落地之后
@@ -13,7 +13,7 @@ related: [ADR-0003, ADR-0005, ADR-0007, ADR-0009, ADR-0010, ADR-0011, SPEC-0001]
 
 给两类读者：**合并执行者**（人类授权之后真正跑合并命令的人——今天通常是人类自己点合并或跑命令，agent 获授权后也可能执行），以及 **PR 作者**（合并后发现问题，需要知道为什么、有什么修复路径、什么不能做）。前置：读过 `git-workflow.md`（分支七类、PR 方向、docs 走 squash 与 code 走 `--no-ff` 已在那篇讲过）与 `review.md`（PASS 状态机、`target` / `body-sha256` 快照的评审侧语义）。不需要先懂 GitHub 的 merge API——本文就地讲。
 
-本文是教学层，解释 `AGENTS.md`「分支与版本 · 合并与同步」的操作面与评审协议里"合并闸口"之后的事；规则冲突以 AGENTS 为准，本文不新增规则。合并完整性的设计论证、开放问题与毕业条件的真源是 `proposals/merge-integrity.md`（status: review）——本文引用它时**区分"已决"与"未决"**：已决部分（评审协议、C6、ADR-0010/0011）已进正式层；未决部分逐条标注"开放问题 N"，落地前不当作现行规则执行。
+本文是教学层，解释 `AGENTS.md`「分支与版本 · 合并与同步」的操作面与评审协议里"合并闸口"之后的事；规则冲突以 AGENTS 为准，本文不新增规则。合并完整性的规则真源已毕业（2026-11-19，proposal pilot 3/3 封账）：决策结论 = ADR-0012（远端重写对齐）+ `AGENTS.md`「分支与版本」合并同步子节；`proposals/merge-integrity.md`（status: adopted）正文已指针化，保留为设计论证与开放问题（Q1–Q5，全部结案）的存档。本文引用存档时**区分"现行规则"与"历史论证"**：现行规则一律以 AGENTS / ADR 为准，存档里的论证只回答"为什么"。
 
 ## 核心图景
 
@@ -187,6 +187,7 @@ RS-2 / RS-3 全程 active；窗口只暂停 PR 与 `ci-ok`，不暂停 force / d
 - message-only rewrite 的边界——ADR-0010（accepted）；docs 单提交约束已撤销（ADR-0005 deprecated）；
 - 评审署名双轨（评论层 `Reviewer` / commit 层 `Reviewed-by`）——ADR-0011；
 - ruleset 迁移（2026-11-18）：RS-1 / RS-2 / RS-3 active，classic dev/main protection 已删除；
+- ADR-0012（remote-rewrite-alignment，accepted，#55）——远端重写对齐：撤回 / retract 之后 `git pull --ff-only` 失败、status 报 diverged 时的恢复路径（`backup/*` 对齐提示 + 人类确认 + `reset --hard origin/dev` + 前置自检），条款落 AGENTS「分支与版本 · 远端重写对齐」；
 - `scripts/retract.sh` + `task retract`（#42）——P2b 的 reset / force / 恢复链自动化，production dry-run 已通过；
 - `scripts/merge.sh` + `task merge`（2026-11-18，PR #50）——P0 快照合并：PASS target/hash 校验、docs squash + 快照 body、code `--no-ff`、合并后落地核验；`task test:merge` fixture 自测。
 
@@ -219,4 +220,4 @@ proposal 的 pilot 毕业门槛：merge.sh 已落地；至少 3 个 PR（docs �
 - 教学层：`review.md`（PASS 与快照的评审侧）、`git-workflow.md`（分支与 PR 方向）、`ci-gate.md`（ci-ok / attribution / pr-meta 的门禁位置）。
 - 设计论证与开放问题真源：`proposals/merge-integrity.md`（Q1–Q5 已全部结案；本指南"现状速览"的对账依据）。
 - 过程记录：`journal/2026/2026-11-16-foamshadow-pr22-metadata-incident.md`（事故与 force reset 决策）、`2026-11-17-foamshadow-a5-pr-meta-matrix-drift.md`（C6 边界）、`2026-11-18-foamshadow-ruleset-migration.md`（本次迁移与 quirk 清单）。
-- 决策链：ADR-0003（分支与合并机理、backport）、ADR-0005（双轨合入策略）、ADR-0007（操作授权与分级）、ADR-0009（CI 门禁策略——required 只挂 `ci-ok`，"CI 绿 ≠ 可合"误区的出处；C6 相关条款已被 ADR-0011 部分取代）、ADR-0010（历史修复边界：message-only）、ADR-0011（评审署名与 pr-meta 边界）。
+- 决策链：ADR-0003（分支与合并机理、backport）、ADR-0005（双轨合入策略）、ADR-0007（操作授权与分级）、ADR-0009（CI 门禁策略——required 只挂 `ci-ok`，"CI 绿 ≠ 可合"误区的出处；C6 相关条款已被 ADR-0011 部分取代）、ADR-0010（历史修复边界：message-only）、ADR-0011（评审署名与 pr-meta 边界）、ADR-0012（远端重写对齐：撤回后的 clone 对齐路径）。

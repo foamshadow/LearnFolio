@@ -4,7 +4,7 @@ author: foamshadow
 date: 2026-11-17
 status: draft
 tags: [se-arch, tool-git]
-related: [ADR-0004, ADR-0005, ADR-0007, ADR-0009, ADR-0010, ADR-0011, SPEC-0001]
+related: [ADR-0004, ADR-0005, ADR-0007, ADR-0009, ADR-0010, ADR-0011, ADR-0012, SPEC-0001]
 ---
 
 # 评审协议讲解：从 BLOCKED 到 PASS，以及 PASS 之后
@@ -189,6 +189,6 @@ Reviewer: <harness>:<model>
 ## 延伸
 
 - 规则原文：`AGENTS.md`「评审协议」+「commit 级评审署名」子节；`docs/guides/git-workflow.md` 第 4 步。
-- 修复与撤回：`merge-integrity` proposal（评审中；快照合并、P2a/P2b、撤回窗口、ADR-0010）。
+- 修复与撤回：快照合并、P2a/P2b、撤回窗口的操作面真源 = `AGENTS.md`「分支与版本」+ ADR-0012（远端重写对齐），完整路径讲解见 `guides/merge.md`；`proposals/merge-integrity.md` 已毕业存档（adopted，设计论证与开放问题档案）。
 - CI 门禁：`docs/guides/ci-gate.md`（pr-meta/C6 的位置与结果矩阵）。
 - 来源：ADR-0004（署名）、ADR-0005（squash）、ADR-0007（授权）、ADR-0009（CI 门禁）、ADR-0010（历史修复与 docs 分支）、ADR-0011（评审署名与 pr-meta 边界）。
