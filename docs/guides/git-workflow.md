@@ -261,6 +261,11 @@ git merge v0.1.1
 
 ## 三层历史读法（所有规则服务的目标）
 
+三个层次对应一条总纲：**git 历史美观是首要目标，作用域 = 入账层**（main / dev 第一父链
++ PR 整理后的提交序列）——commit 量精简、分支结构明确、内容合规完善、无意义分支及时
+清理（合并后删本地分支，squash 落地用 `-D`）；feat 过程史不受此限（WIP 草稿文化，
+过程保留正是 --no-ff 的目的）。完整条款见 AGENTS「提交纪律」历史美观总纲。
+
 ```
 git log --first-parent main + tag   →  版本史：我们发布过什么
 git log --first-parent dev          →  任务史：谁在何时合入了什么（含 hotfix 回流）
