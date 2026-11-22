@@ -29,7 +29,7 @@ PR #62 对账修正落地 → #63 起草（Pi 两轮：BLOCKED r1 → PASS r2）
 | 三项配置 | auto-commit ✓ / auto-push ✓ / review=Pi:glm-5.3 | AskUserQuestion 一次申请 |
 | docs 提交确认 | 文件清单 + 关键点随提交告知（设计决策全程作者对拍） | ADR-0007 D5 |
 | PR 创建 | #62 / #63 自动创建（双授权齐全） | |
-| pr-review | #62 PASS r1（24min）；#63 BLOCKED r1（3B+4N，9min）→ PASS r2（缩范围，2min） | Pi 首次 BLOCKED→FIX→PASS 全循环 |
+| pr-review | #62 PASS r1（24min）；#63 BLOCKED r1（3B+4N，9min）→ PASS r2（缩范围，2min） | Pi 第二次 BLOCKED→FIX→PASS 全循环（首次为 #61 learn 提案） |
 | 合并请求 | #62 人工授权（`task merge` 被权限分类器拦截一次后由人执行）；#63 明确授权后 agent 执行 | 授权措辞须字面明确 |
 | 合并落地 | #62 → `e6dca55`；#63 → `6eb3597`（快照核验均通过） | |
 
@@ -53,11 +53,12 @@ PR #62 对账修正落地 → #63 起草（Pi 两轮：BLOCKED r1 → PASS r2）
 | #62 初稿 | `159d3e4` | Pi:glm-5.3 | PR 级 | PASS r1（2 条非阻塞 note：filters 侧别、"保留"措辞） |
 | #63 初稿 | `e692edb` | Pi:glm-5.3 | PR 级 | BLOCKED r1（3B+4N：行轴错位/边界外写回/PASS 冻结冲突） |
 | #63 修正 | `c347f5c` | Pi:glm-5.3 | PR 级复审（缩范围） | PASS r2 |
+| #64 毕业批初稿 | `d2b813d` | Pi:glm-5.3 | PR 级 | BLOCKED r1（2B+4N：毕业批登记面失守 / "首次"断言错误）；round 2 结论属本篇边界外，由 PR #64 评论层承载 |
 
 ## 账目与遗留
 
 - dev：#62 → `e6dca55`；#63 → `6eb3597`；毕业批随本 PR 落地。
 - 遗留：① task-lifecycle-gates 毕业批（素材 ②⑥ + amend 代码分支——演练
   矩阵后）；② 机器对账六条（演进口，清单跑熟后 ci:docs）；③ 清单 1 首次
-  **跨任务**应用（本篇是自我适用，下一代码任务起强制）；④ PR-3 评审结论
-  回填审查记录表。
+  **跨任务**应用（本篇是自我适用，下一代码任务起强制）；④ #64 评审结论
+  回填本篇审查记录表。

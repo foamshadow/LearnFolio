@@ -5,7 +5,7 @@ date: 2026-11-22
 status: adopted
 tags: [se-arch, se-review, tool-git]
 related: [ADR-0006, ADR-0011, docs/proposals/task-lifecycle-gates.md]
-adopted-as: "ADR-0013（事件边界/二值判定/预先性记录/journal 写回与审查记账）+ AGENTS「文档写回」条款（清单 1/2、learning 例外、时点锚、终态就位）+ journal _template.md 审查记录表 + PR 描述模板自查区"
+adopted-as: "ADR-0013（事件边界/二值判定/预先性记录/journal 写回与审查记账）+ AGENTS「文档写回」条款（清单 1/2、learning 例外、时点锚、终态就位）+ AGENTS 历史美观总纲与面板注记（毕业批对拍新增，见演进记录）+ journal _template.md 审查记录表 + PR 描述模板自查区 + README 决策线行 + git-workflow / doc-system 同步"
 ---
 
 # docs 写回触发与收口清单（proposal）
@@ -41,3 +41,10 @@ adopted-as: "ADR-0013（事件边界/二值判定/预先性记录/journal 写回
   B1–B3 全闭、N1/N2/N4 落实、N3 随 B2 消解。毕业批（同 PR）：正文指针化 +
   ADR-0013 + AGENTS 条款 + journal 模板 + PR 模板自查区 + README 决策线行
   + git-workflow / doc-system 维护触发器同步 + #60 遗留注记。
+- 2026-11-22 毕业批登记（PR #64，清单 1 第 3 项自我适用）：落点在 round 2
+  条目八项之外**对拍新增两处**（作者点名随毕业批到达，非 §9 原列）——AGENTS
+  提交纪律节首「历史美观总纲」（操作级：四子点各挂现行条款锚〔提交粒度
+  ADR-0007 / 三层历史读法 / 整理门 fixup / 分支清理〕，总纲句为既有规则
+  优先级的显式化，"首要目标"系作者拍板的排序声明，不新立决策故不占 ADR）；
+  AGENTS 协作闭环区「任务状态面板」注记（仓库外工具处置约定，与 Issues
+  可选执行追踪层同位，操作级）。

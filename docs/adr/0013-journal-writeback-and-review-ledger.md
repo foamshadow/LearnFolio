@@ -40,7 +40,8 @@ ADR 收**决策级**——事件边界（含二值判定）、预先性记录、
      journal 同步），功能提交在前；
    - trailer 严格语义：trailer 只声明"当前树被谁审过"，不跨版本累加旧审查
      者——版本级审查历史由 journal「审查记录」表承载（轮次/版本/审查者/
-     层级/结果），格式登记 journal 模板；
+     层级/结果），格式登记 journal 模板；人类审查者在表内记 `none`、具体
+     人名落 PR 评论（ADR-0011 口径的表内延伸）；
    - amend 预检判据：纯文档 commit（`docs:` 前缀 + 仅文档文件）amend →
      不预检、删旧 trailer 转移 PR 级；评审期间 journal 每轮更新 = amend
      末尾 docs commit（搭同一 push，零额外消耗）。**功能提交预检与 fixup
