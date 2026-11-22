@@ -4,7 +4,7 @@ author: foamshadow
 date: 2026-11-22
 status: draft
 tags: [se-arch, tool-herdr]
-related: [proposals/task-lifecycle-gates.md, proposals/agent-confirmation-chain.md]
+related: [docs/proposals/task-lifecycle-gates.md, docs/proposals/agent-confirmation-chain.md]
 adopted-as: ""
 ---
 
@@ -72,6 +72,11 @@ workspace 5 个 tab——3 个 idle pi + 2 个 working claude），评审环节�
 | 场景 | 默认 | opt-in |
 | --- | --- | --- |
 | commit 级与 PR 级评审 | `Pi:glm-5.3` | `DSH:deepseek-v4.1-flash-1017`（任务启动时手动指定才用——API 按量付费） |
+| 作者为 Pi 的任务 | `ClaudeCode:glm-5.3-flash`（同 GLM plan 额度；异 harness，满足互审约束） | 同上 |
+
+- **兜底**：独立性排除后偏好表无合规默认（作者为 ClaudeCode 且 Pi 席位全忙按
+  §5 新建即可；作者为未登记 harness 等未来组合）→ **停：升级人类指定**，不静默
+  降级、不代选。
 
 ### 4. 互传协议
 
@@ -109,8 +114,10 @@ workspace 5 个 tab——3 个 idle pi + 2 个 working claude），评审环节�
 质量敏感场景 opt-in：不复用，直接新会话/新 pane（作者判断或人类指定）
 ```
 
-- **无空闲评审者 → 新建**：`tab create`（label `review`）+ `agent start rv<N>
-  --kind pi -- --model glm-5.3`（启动参数待实测）→ rename → 首 prompt 自含任务
+- **无空闲评审者 → 新建**：新建的 kind/model 取偏好表中该任务适用的行（独立性
+  排除后"新建什么"由此回答——如作者为 Pi → 新建 claude 席位；默认场景 → pi）。
+  流程：`tab create`（label `review`）+ `agent start rv<N> --kind <kind> -- <model
+  参数>`（启动参数待实测）→ rename → 首 prompt 自含任务
   背景（评审请求本就自含上下文，评审者不怕新会话）。
 - 手动指定 DSH 且无在场 DSH pane：`tab create` + pane 内起 dsh-tui（无 agent 集成，
   不走 `agent start`），互传按降级通道。
@@ -137,3 +144,7 @@ proposals/herdr-collaboration.md 编排（席位寻址、互传分级、池化�
   后置至 review 选项之后、席位命名即登记、互传分级（commit 直达 / PR 评论+提醒）、
   池化生命周期（收尾 compact 回池 + 复用为默认）、偏好表（Pi:glm-5.3 全层级默认、
   DSH 手动指定 opt-in）。
+- 2026-11-22 round 1 评审吸收（PR #65，Pi:glm-5.3 经本编排首演，0B+4N+1Q，
+  处置①修后 round 2 重审）：N1 related 补 `docs/` 前缀；N3 兜底落 §3/§5（偏好表
+  补"作者为 Pi"行、新建 kind 按偏好表适用行、无合规候选升级人类指定）；N2/N4/Q1
+  落本任务 journal（版本列、复述面判定、审查记录口径）。
