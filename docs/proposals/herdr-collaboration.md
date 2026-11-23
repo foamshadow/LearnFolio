@@ -71,7 +71,7 @@ workspace 5 个 tab——3 个 idle pi + 2 个 working claude），评审环节�
 
 | 场景 | 默认 | opt-in |
 | --- | --- | --- |
-| commit 级与 PR 级评审 | `Pi:glm-5.3` | `DSH:deepseek-v4.1-flash-1017`（任务启动时手动指定才用——API 按量付费） |
+| commit 级与 PR 级评审 | `Pi:glm-5.4` | `DSH:deepseek-v4.1-flash-1017`（任务启动时手动指定才用——API 按量付费） |
 | 作者为 Pi 的任务 | `ClaudeCode:glm-5.3-flash`（同 GLM plan 额度；异 harness，满足互审约束） | 同上 |
 
 - **兜底**：独立性排除后偏好表无合规默认（作者为 ClaudeCode 且 Pi 席位全忙按
@@ -150,5 +150,7 @@ proposals/herdr-collaboration.md 编排（席位寻址、互传分级、池化�
   处置①修后 round 2 重审）：N1 related 补 `docs/` 前缀；N3 兜底落 §3/§5（偏好表
   补"作者为 Pi"行、新建 kind 按偏好表适用行、无合规候选升级人类指定）；N2/N4/Q1
   落本任务 journal（版本列、复述面判定、审查记录口径）。
+- 2026-11-22 偏好表默认评审者 `Pi:glm-5.3` → `Pi:glm-5.4`（人类决定：5.4 更强且价格
+  减半；键已登记于 PR #68）。演进记录中的历史轮次保留当时实际模型，不回改。
 - 2026-11-22 载荷补快照顶格传递（PR #66——#65 合并阶段执行差异吸收；评审 N1
   指出 §4 规则级陈述变更应记演进行，自查区"不适用"判定随之修正）。
